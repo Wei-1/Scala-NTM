@@ -303,17 +303,27 @@ class memRead(
     // println(" memory TopVal " + memVal.mkString(","))
     // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
     // y = alpha * A * x + beta * y; if t == blas.NoTrans
-    for(k <- 0 until m; j <- 0 until n) {
-      weightsGrad(j) += memVal(k * n + j) * grad(k)
-    }
     // println(" refocus TopGrad " + W.TopGrad.mkString(","))
+
+    // println("  - memVal " + memVal.mkString(","))
+    // println("  - grad " + grad.mkString(","))
+
+    // for(k <- 0 until m; j <- 0 until n) {
+    //   weightsGrad(j) += memVal(j * m + k) * grad(k)
+    // }
+    Gemv(false, 1, memVal, grad, 1, weightsGrad)
+
+    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
+
     val memGrad = Memory.TopGrad
     val weights = W.TopVal
     // Ger(alpha f64, x, y Vec, A General)
     // A += alpha * x * y^T
+    // println(memGrad.mkString(","))
     for(i <- 0 until m; j <- 0 until n) {
-      memGrad(i * n + j) += weights(j) * grad(i)
+      memGrad(j * m + i) += weights(j) * grad(i)
     }
+    // println(memGrad.mkString(","))
     // println(" refocus TopGrad " + W.TopGrad.mkString(","))
   }
 }
@@ -377,6 +387,7 @@ class writtenMemory(
     val mgrad = new Array[Double](n * m)
     val hEraseGrad = new Array[Double](m)
     for(i <- 0 until Ws.size) {
+
       val eraseV = erase(i)
       val addV = add(i)
       val weightsVal = Ws(i).TopVal
@@ -387,24 +398,43 @@ class writtenMemory(
       // A += alpha * x * y^T
       for(k <- 0 until m; j <- 0 until n)
         mgrad(k * n + j) += weightsVal(j) * eraseV(k)
-      div1MWE(mgrad)
+
+      println("-!0- " + mgrad.mkString(","))
+
+      div1MWE(mgrad) // <------------------------------------------------ CAUSING THE ERROR
+
+      println("-!1- " + mgrad.mkString(","))
+
       for(j <- 0 until n * m)
         mgrad(j) *= TopGrad(j)
 
       val weightsV = Ws(i).TopGrad
+
+      // println("-#- " + weightsVal.mkString(","))
+      println("-!2- " + mgrad.mkString(","))
+      // println("-@- " + eraseV.mkString(","))
       // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
       // y = alpha * A * x + beta * y; if t == blas.NoTrans
-      for(k <- 0 until m; j <- 0 until n)
-        weightsV(j) -= mgrad(k * n + j) * eraseV(k)
-      for(k <- 0 until m; j <- 0 until n)
-        weightsV(j) += TopGrad(k * n + j) * addV(k)
+      println("-~- " + weightsV.mkString(","))
+      // for(k <- 0 until m; j <- 0 until n)
+      //   weightsV(j) -= mgrad(j * m + k) * eraseV(k)
+      Gemv(false, -1, mgrad, eraseV, 1, weightsV)
+
+      println("-~- " + weightsV.mkString(","))
+
+      // for(k <- 0 until m; j <- 0 until n)
+      //   weightsV(j) += TopGrad(j * m + k) * addV(k)
+      Gemv(false, 1, TopGrad, addV, 1, weightsV)
+
+      println("-~- " + weightsV.mkString(","))
       
       val hErase = Heads(i).EraseGrad()
       for(j <- 0 until hEraseGrad.size)
         hEraseGrad(j) = 0
 
-      for(k <- 0 until m; j <- 0 until n)
-        hEraseGrad(k) -= TopGrad(k * n + j) * weightsVal(k)
+      // for(k <- 0 until m; j <- 0 until n)
+      //   hEraseGrad(k) -= mgrad(k * n + j) * weightsVal(k)
+      Gemv(true, -1, mgrad, weightsVal, 1, hEraseGrad)
 
       for(j <- 0 until eraseV.size) {
         hErase(j) += hEraseGrad(j) * eraseV(j) * (1 - eraseV(j))
@@ -447,8 +477,16 @@ class writtenMemory(
   }
 
   def Backward() {
+    println(Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
+
     backwardWErase()
+
+    println(Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
+
     backwardAdd()
+
+    // println(Ws.map(_.TopGrad.mkString(",")).mkString(" ;; "))
+
     backwardMtm1()
   }
 }
@@ -512,13 +550,20 @@ class memOp(
   var WM: writtenMemory = null
 ) {
   def Backward() {
-    // println(" --- refocus TopGrad " + W.map(_.TopGrad.mkString(",")).mkString(" ; "))
-    R.foreach(r => r.Backward()) //  <---- FIXED
-    // println(" --- refocus TopGrad " + W.map(_.TopGrad.mkString(",")).mkString(" ; "))
-    WM.Backward()
+
+    // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
+
+    R.foreach(r => r.Backward()) //  <---- ERROR HERE -> FIXED
+
+    // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
+
+    WM.Backward() //  <---- ERROR HERE
+
+    // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
+
     WM.Ws.foreach { rf =>
       // println(" - CHECK gamma[$k] " + WM.Heads.map(_.GammaGrad()).mkString(","))
-      rf.Backward() //  <----                                                                  NOW THINGS WENT WRONG HERE!
+      rf.Backward()
       // println(" - CHECK gamma[$k] " + WM.Heads.map(_.GammaGrad()).mkString(","))
       rf.SW.Backward()
       rf.SW.WG.Backward()

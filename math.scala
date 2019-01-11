@@ -34,4 +34,28 @@ object math {
   def Sprint2(t: Array[Array[Double]]): String = {
     t.map(_.mkString("[", " ", "]")).mkString("[", "", "]")
   }
+
+  def Gemv(trans: Boolean, alpha: Double, M2: Array[Double],
+    x: Array[Double], beta: Double, y: Array[Double]): Unit = {
+    // y = alpha * A * x + beta * y; if t == blas.NoTrans
+    val n = x.size
+    val m = y.size
+    if(beta == 1) {
+      if(trans) {
+        for(i <- 0 until n; j <- 0 until m)
+          y(j) += alpha * M2(i * m + j) * x(i)
+      } else {
+        for(i <- 0 until n; j <- 0 until m)
+          y(j) += alpha * M2(j * n + i) * x(i)
+      }
+    } else {
+      if(trans) {
+        for(i <- 0 until n; j <- 0 until m)
+          y(j) = alpha * M2(i * m + j) * x(i) + beta * y(j)
+      } else {
+        for(i <- 0 until n; j <- 0 until m)
+          y(j) = alpha * M2(j * n + i) * x(i) + beta * y(j)
+      }
+    }
+  }
 }

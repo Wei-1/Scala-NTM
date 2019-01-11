@@ -1,6 +1,7 @@
 package ntm
 
-class T(var hasError: Boolean = false) {
+class T() {
+  var hasError: Boolean = false
   val startTime = System.currentTimeMillis
   def Fatalf(s: String): Unit = {
     hasError = true
@@ -15,6 +16,7 @@ class T(var hasError: Boolean = false) {
       " Seconds" + Console.RESET
     )
     if(hasError) System.exit(1) else System.exit(0)
+    println("Wei's Test")
   }
 }
 
