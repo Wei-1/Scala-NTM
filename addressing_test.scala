@@ -11,8 +11,7 @@ object addressing_test {
   val outputGradient    = 1.234
   val w11OutputGradient = 0.987
 
-  // def test_main(t: T) {
-  def main(args: Array[String]) {
+  def TestCircuit(t: T) {
     val t = new T
 
     val n = 3
@@ -24,7 +23,7 @@ object addressing_test {
     )
     for(i <- 0 until n) {
       for(j <- 0 until m) {
-        memory.TopVal(i * m + j) = Math.random
+        memory.TopVal(i * m + j) = 0.001 * i * j + 0.1//Math.random
       }
     }
     val hul = Head.headUnitsLen(m)
@@ -35,7 +34,7 @@ object addressing_test {
       heads(i).grads = new Array[Double](hul)
       heads(i).Wtm1 = randomRefocus(n)
       for(j <- 0 until hul) {
-        heads(i).vals(j) = Math.random
+        heads(i).vals(j) = 0.001 * i * j + 0.1//Math.random
       }
     }
     // We want to check the case where Beta > 0 and Gamma > 1.
@@ -79,7 +78,6 @@ object addressing_test {
     checkBeta(t, heads, memoryTop, ax)
     checkK(t, heads, memoryTop, ax)
     checkMemory(t, heads, memoryTop, ax)
-    t.endT
   }
 
   def addressing(heads: Array[Head], memory: Array[Array[unit]]): Double = {
@@ -92,7 +90,7 @@ object addressing_test {
     for(i <- 0 until heads.size) {
       val h = heads(i)
       // Content-based addressing
-      val beta = Math.exp(heads(i).BetaVal())
+      val beta = Math.exp(h.BetaVal())
       val wc = new Array[Double](memory.size)
       var sum: Double = 0
       for(j <- 0 until wc.size) {
@@ -205,9 +203,9 @@ object addressing_test {
         memory(i)(j).Val = x
 
         if(grad.isNaN || Math.abs(grad - memory(i)(j).Grad) > 1e-5) {
-          t.Fatalf(s"wrong memory gradient expected $grad, got ${memory(i)(j).Grad}")
+          t.Fatalf(s"[ADDRESS] wrong memory gradient expected $grad, got ${memory(i)(j).Grad}")
         } else {
-          t.Logf(s"OK memory[$i][$j] gradient $grad, ${memory(i)(j).Grad}")
+          t.Logf(s"[ADDRESS] OK memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
         }
       }
     }
@@ -227,9 +225,9 @@ object addressing_test {
         hd.KVal()(i) = x
 
         if(grad.isNaN || Math.abs(grad - hd.KGrad()(i)) > 1e-5) {
-          t.Fatalf(s"wrong beta[$i] gradient expected $grad, got ${hd.KGrad()(i)}")
+          t.Fatalf(s"[ADDRESS] wrong beta[$i] gradient expected $grad, got ${hd.KGrad()(i)}")
         } else {
-          t.Logf(s"OK K[$k][$i] agradient $grad ${hd.KGrad()(i)}")
+          t.Logf(s"[ADDRESS] OK K[$k][$i] gradient expected $grad, got ${hd.KGrad()(i)}")
         }
       }
     }
@@ -248,9 +246,9 @@ object addressing_test {
       hd.vals(3 * hd.M) = x
 
       if(grad.isNaN || Math.abs(grad - hd.BetaGrad()) > 1e-5) {
-        t.Fatalf(s"wrong beta gradient expected $grad, got ${hd.BetaGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong beta gradient expected $grad, got ${hd.BetaGrad()}")
       } else {
-        t.Logf(s"OK beta[$k] agradient $grad ${hd.BetaGrad()}")
+        t.Logf(s"[ADDRESS] OK beta[$k] gradient expected $grad, got ${hd.BetaGrad()}")
       }
     }
   }
@@ -269,9 +267,9 @@ object addressing_test {
         hd.Wtm1.TopVal(i) = x
 
         if(grad.isNaN || Math.abs(grad - hd.Wtm1.TopGrad(i)) > 1e-5) {
-          t.Fatalf(s"wrong wtm1[$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
+          t.Fatalf(s"[ADDRESS] wrong wtm1[$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
         } else {
-          t.Logf(s"OK wtm1[$k][$i] agradient $grad ${hd.Wtm1.TopGrad(i)}")
+          t.Logf(s"[ADDRESS] OK wtm1[$k][$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
         }
       }
     }
@@ -290,9 +288,9 @@ object addressing_test {
       hd.vals(3 * hd.M + 1) = x
 
       if(grad.isNaN || Math.abs(grad - hd.GGrad()) > 1e-5) {
-        t.Fatalf(s"wrong G gradient expected $grad, got ${hd.GGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong G gradient expected $grad, got ${hd.GGrad()}")
       } else {
-        t.Logf(s"OK G[$k] agradient $grad ${hd.GGrad()}")
+        t.Logf(s"[ADDRESS] OK G[$k] agradient expected $grad, got ${hd.GGrad()}")
       }
     }
   }
@@ -301,7 +299,7 @@ object addressing_test {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
       val x = hd.SVal()
-      val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
+      val h = machineEpsilonSqrt * Math.max(x.abs, 1)
       val xph = x + h
       hd.vals(3 * hd.M + 2) = xph
       val dx = xph - x
@@ -310,9 +308,9 @@ object addressing_test {
       hd.vals(3 * hd.M + 2) = x
 
       if(grad.isNaN || Math.abs(grad - hd.SGrad()) > 1e-5) {
-        t.Fatalf(s"wrong S gradient expected $grad, got ${hd.SGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong S gradient expected $grad, got ${hd.SGrad()}")
       } else {
-        t.Logf(s"OK S[$k] agradient $grad ${hd.SGrad()}")
+        t.Logf(s"[ADDRESS] OK S[$k] agradient expected $grad, got ${hd.SGrad()}")
       }
     }
   }
@@ -321,7 +319,7 @@ object addressing_test {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
       val x = hd.GammaVal()
-      val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
+      val h = machineEpsilonSqrt * Math.max(x.abs, 1)
       val xph = x + h
       hd.vals(3 * hd.M + 3) = xph
       val dx = xph - x
@@ -330,9 +328,9 @@ object addressing_test {
       hd.vals(3 * hd.M + 3) = x
 
       if(grad.isNaN || Math.abs(grad - hd.GammaGrad()) > 1e-5) {
-        t.Fatalf(s"wrong gamma gradient expected $grad, got ${hd.GammaGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong gamma gradient expected $grad, got ${hd.GammaGrad()}")
       } else {
-        t.Logf(s"OK gamma[$k] gradient $grad ${hd.GammaGrad()}")
+        t.Logf(s"[ADDRESS] OK gamma[$k] gradient expected $grad, got ${hd.GammaGrad()}")
       }
     }
   }
@@ -341,7 +339,7 @@ object addressing_test {
     val w = new Array[Double](n)
     var sum: Double = 0
     for(i <- 0 until w.size) {
-      w(i) = Math.abs(Math.random)
+      w(i) = Math.abs(0.01 * i + 0.1)//Math.random)
       sum += w(i)
     }
     for(i <- 0 until w.size) {

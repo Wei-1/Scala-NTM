@@ -141,7 +141,7 @@ object NTM {
     for(t <- 1 until in.size) {
       machines(t) = NewNTM(machines(t-1), in(t))
     }
-    for(t <- in.size to 0 by -1) {
+    for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
       out.Model(t, m.Controller.YVal(), m.Controller.YGrad())
       m.backward()

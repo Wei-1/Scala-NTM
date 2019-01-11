@@ -166,7 +166,7 @@ class controller1(
     val h1Grad = H1Grad
     // blas64.Gemv(blas.Trans, 1, wyVal(), out, 1, h1Grad)
     for(i <- 0 until h1Grad.size; j <- 0 until out.size)
-      h1Grad(i) += wyVal()(i)(j) * out(j)
+      h1Grad(i) += wyVal()(j)(i) * out(j)
     // Ger(alpha f64, x, y Vec, A General)
     // A += alpha * x * y^T
     // blas64.Ger(1, out, h1Val, wyGrad())
@@ -182,8 +182,8 @@ class controller1(
 
     val u = new Array[Double](wh1Cols())
     // blas64.Gemv(blas.Trans, 1, wh1Val(), h1Grad, 1, u)
-    for(i <- 0 until u.size; j <- 0 until h1Grad.size)
-      u(i) += wh1Val()(i)(j) * h1Grad(j)
+    for(i <- 0 until u.size; j <- 0 until h1Size)
+      u(i) += wh1Val()(j)(i) * h1Grad(j)
     // Ger(alpha f64, x, y Vec, A General)
     // A += alpha * x * y^T
     // blas64.Ger(1, h1Grad, ReadsXVal, wh1Grad())

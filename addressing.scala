@@ -26,7 +26,6 @@ class similarityCircuit(
 }
 
 object similarityCircuit {
-
   def newSimilarityCircuit(
     uVal: Array[Double],
     uGrad: Array[Double],
@@ -49,7 +48,7 @@ class betaSimilarity(
   var b: Double = 0.0,
   var Top: unit = new unit
 ){
-  Top.Val = b * S.TopVal
+  if(S != null) Top.Val = b * S.TopVal
   def Backward() {
     BetaGrad += S.TopVal * b * Top.Grad
     S.TopGrad += b * Top.Grad
@@ -214,13 +213,15 @@ object shiftedWeighting {
 }
 
 class refocus(
-  var GammaVal: Double = 0,
-  var GammaGrad: Double = 0,
+  var h: Head = null,
   var SW: shiftedWeighting = null,
   val TopVal: Array[Double],
   val TopGrad: Array[Double],
   var g: Double = 0
 ){
+  // println("----" + TopGrad.mkString(","))
+  def GammaVal: Double = h.GammaVal()
+  def GammaGrad: Double = h.GammaGrad()
   def backwardSW() {
     var topGV: Double = 0
     for(i <- 0 until TopVal.size) {
@@ -232,6 +233,7 @@ class refocus(
   }
 
   def backwardGamma() {
+    // println("----" + TopGrad.mkString(","))
     val lns = new Array[Double](SW.Top.size)
     var lnexp: Double = 0
     var s: Double = 0
@@ -241,30 +243,37 @@ class refocus(
       lnexp += lns(i) * pow
       s += pow
     }
+    // Console.err.println(" - s " + s)
+    // Console.err.println(" - lnexp " + lnexp)
     val lnexps = lnexp / s
     var grad: Double = 0
     for(i <- 0 until TopVal.size if SW.Top(i).Val >= machineEpsilon) {
+      // println(" - TopVal " + TopVal(i)) //  <---- Correct
+      // println(" - TopGrad " + TopGrad(i)) //  <---- Error
       grad += TopGrad(i) * (TopVal(i) * (lns(i) - lnexps))
     }
-    grad = grad / (1 + Math.exp(-(GammaVal)))
-    GammaGrad += grad
+    println(" - grad " + grad)
+    grad = grad / (1 + Math.exp(-GammaVal))
+    h.grads(3 * h.M + 3) += grad
   }
 
   def Backward() {
+    // println("----" + TopGrad.mkString(","))
     backwardSW()
+    // println("----" + TopGrad.mkString(","))
     backwardGamma()
+    // println("----" + TopGrad.mkString(","))
   }
 }
 
 object refocus {
-  def newRefocus(gammaVal: Double, gammaGrad: Double, sw: shiftedWeighting): refocus = {
+  def newRefocus(h: Head, sw: shiftedWeighting): refocus = {
     val rf = new refocus(
-      GammaVal = gammaVal,
-      GammaGrad = gammaGrad,
+      h = h,
       SW = sw,
       TopVal = new Array[Double](sw.Top.size),
       TopGrad = new Array[Double](sw.Top.size),
-      g = Math.log(Math.exp(gammaVal) + 1) + 1
+      g = Math.log(Math.exp(h.GammaVal()) + 1) + 1
     )
     var sum: Double = 0
     for(i <- 0 until rf.TopVal.size) {
@@ -291,10 +300,13 @@ class memRead(
     val grad = TopGrad
     val memVal = Memory.TopVal
     val weightsGrad = W.TopGrad
+    // println(" memory TopVal " + memVal.mkString(","))
     // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
     // y = alpha * A * x + beta * y; if t == blas.NoTrans
-    for(k <- 0 until m; j <- 0 until n)
-      weightsGrad(j) -= memVal(k * n + j) * grad(k)
+    for(k <- 0 until m; j <- 0 until n) {
+      weightsGrad(j) += memVal(k * n + j) * grad(k)
+    }
+    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
     val memGrad = Memory.TopGrad
     val weights = W.TopVal
     // Ger(alpha f64, x, y Vec, A General)
@@ -302,6 +314,7 @@ class memRead(
     for(i <- 0 until m; j <- 0 until n) {
       memGrad(i * n + j) += weights(j) * grad(i)
     }
+    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
   }
 }
 
@@ -499,10 +512,14 @@ class memOp(
   var WM: writtenMemory = null
 ) {
   def Backward() {
-    R.foreach(r => r.Backward())
+    // println(" --- refocus TopGrad " + W.map(_.TopGrad.mkString(",")).mkString(" ; "))
+    R.foreach(r => r.Backward()) //  <---- FIXED
+    // println(" --- refocus TopGrad " + W.map(_.TopGrad.mkString(",")).mkString(" ; "))
     WM.Backward()
     WM.Ws.foreach { rf =>
-      rf.Backward()
+      // println(" - CHECK gamma[$k] " + WM.Heads.map(_.GammaGrad()).mkString(","))
+      rf.Backward() //  <----                                                                  NOW THINGS WENT WRONG HERE!
+      // println(" - CHECK gamma[$k] " + WM.Heads.map(_.GammaGrad()).mkString(","))
       rf.SW.Backward()
       rf.SW.WG.Backward()
       rf.SW.WG.WC.Backward()
@@ -531,7 +548,7 @@ object memOp {
       val wc = contentAddressing.newContentAddressing(ss)
       val wg = gatedWeighting.newGatedWeighting(h.GVal(), h.GGrad(), wc, h.Wtm1)
       val ws = shiftedWeighting.newShiftedWeighting(h.SVal(), h.SGrad(), wg)
-      circuit.W(wi) = refocus.newRefocus(h.GammaVal(), h.GammaGrad(), ws)
+      circuit.W(wi) = refocus.newRefocus(h, ws)
       circuit.R(wi) = memRead.newMemRead(circuit.W(wi), mtm1)
     }
     circuit.WM = writtenMemory.newWrittenMemory(circuit.W, heads, mtm1)
