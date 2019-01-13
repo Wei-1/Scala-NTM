@@ -564,7 +564,7 @@ class memOp(
     // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     R.foreach(r => r.Backward()) //  <---- ERROR HERE -> FIXED
     // println(" -1- " + WM.Mtm1.TopGrad.mkString(","))
-    WM.Backward() //  <---- ERROR HERE
+    WM.Backward() //  <---- ERROR HERE -> FIXED
     // println(" -2- " + WM.Mtm1.TopGrad.mkString(","))
     // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     WM.Ws.foreach { rf =>
@@ -578,7 +578,7 @@ class memOp(
       rf.SW.WG.WC.Units.foreach { bs =>
         bs.Backward()
         // println(" -3300- " + WM.Mtm1.TopGrad.mkString(","))
-        bs.S.Backward() // <---- WHERER THINGS WENT WRONG
+        bs.S.Backward() // <---- WHERER THINGS WENT WRONG -> FIXED
       }
       // println(" -331- " + WM.Mtm1.TopGrad.mkString(","))
     }

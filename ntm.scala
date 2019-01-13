@@ -141,11 +141,18 @@ object NTM {
     for(t <- 1 until in.size) {
       machines(t) = NewNTM(machines(t-1), in(t))
     }
+
+    println(" - cm 0 - " + weights.mkString(","))
+
     for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
       out.Model(t, m.Controller.YVal(), m.Controller.YGrad())
-      m.backward()
+      m.backward() //  <---- ERROR HERE
+
+      println(" - cm 01 - " + weights.mkString(","))
     }
+
+    println(" - cm 1 - " + weights.mkString(","))
 
     // Compute gradients for the bias values of the initial memory and weights.
     for(i <- 0 until reads.size) {
@@ -156,6 +163,8 @@ object NTM {
       cas(i).Backward()
     }
 
+    println(" - cm 2 - " + weights.mkString(","))
+
     // Copy gradients to the controller.
     val cwtm1 = c.Wtm1BiasGrad()
     for(i <- 0 until cas.size) {
@@ -163,7 +172,7 @@ object NTM {
         cwtm1(i * c.MemoryN() + j) = cas(i).Units(j).Top.Grad
       }
     }
-
+    // println(" - cm 3 - " + weights.mkString(","))
     machines
   }
 

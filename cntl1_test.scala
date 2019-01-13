@@ -8,13 +8,13 @@ object cntl1_test {
     val x = makeTensor2(times, 4)
     for(i <- 0 until x.size) {
       for(j <- 0 until x(i).size) {
-        x(i)(j) = Math.random
+        x(i)(j) = 0.0001 * i * j + 0.1//Math.random
       }
     }
     val y = makeTensor2(times, 4)
     for(i <- 0 until y.size) {
       for(j <- 0 until y(i).size) {
-        y(i)(j) = Math.random
+        y(i)(j) = 0.0001 * i * j + 0.1//Math.random
       }
     }
     val n = 3
@@ -24,11 +24,12 @@ object cntl1_test {
     val c = controller1.NewEmptyController1(x(0).size, y(0).size, h1Size, numHeads, n, m)
     val weights = c.WeightsVal()
     for(i <- 0 until weights.size) {
-      weights(i) = 2 * Math.random
+      weights(i) = 2 *    0.001 * i + 0.2//Math.random
     }
-
+    // println(" - cm " + c.WeightsGrad().mkString(","))
     val model = new LogisticModel(Y = y)
     NTM.ForwardBackward(c, x, model)
+    // println(" - cm " + c.WeightsGrad().mkString(","))
     checkGradients(t, c, ControllerForward, x, model)
   }
 
@@ -37,13 +38,13 @@ object cntl1_test {
     val x = makeTensor2(times, 4)
     for(i <- 0 until x.size) {
       for(j <- 0 until x(i).size) {
-        x(i)(j) = Math.random
+        x(i)(j) = 0.0001 * i * j + 0.1//Math.random
       }
     }
     val outputSize = 4
     val y= new Array[Int](times)
     for(i <- 0 until y.size) {
-      y(i) = (Math.random * outputSize).toInt
+      y(i) = ((0.001 * i + 0.1/*Math.random*/) * outputSize).toInt
     }
     val n = 3
     val m = 2
@@ -52,7 +53,7 @@ object cntl1_test {
     val c = controller1.NewEmptyController1(x(0).size, outputSize, h1Size, numHeads, n, m)
     val weights = c.WeightsVal()
     for(i <- 0 until weights.size) {
-      weights(i) = 2 * Math.random
+      weights(i) = 2 *    0.001 * i + 0.2//Math.random
     }
 
     val model = new MultinomialModel(Y = y)
