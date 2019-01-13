@@ -23,9 +23,10 @@ object addressing_test {
     )
     for(i <- 0 until n) {
       for(j <- 0 until m) {
-        memory.TopVal(i * m + j) = 0.001 * i * j + 0.1//Math.random
+        memory.TopVal(i * m + j) = Math.random
       }
     }
+
     val hul = Head.headUnitsLen(m)
     val heads = new Array[Head](2)
     for(i <- 0 until heads.size) {
@@ -34,12 +35,14 @@ object addressing_test {
       heads(i).grads = new Array[Double](hul)
       heads(i).Wtm1 = randomRefocus(n)
       for(j <- 0 until hul) {
-        heads(i).vals(j) = 0.001 * i * j + 0.1//Math.random
+        heads(i).vals(j) = Math.random
       }
     }
     // We want to check the case where Beta > 0 and Gamma > 1.
     heads(0).vals(3 * heads(0).M) = 0.137350
     heads(0).vals(3 * heads(0).M + 3) = 1.9876
+
+    // println("memory TV " + memory.TopVal.mkString(","))
 
     val circuit = memOp.newMemOp(heads, memory)
     for(i <- 0 until circuit.W.size) {
@@ -61,7 +64,9 @@ object addressing_test {
         circuit.WM.TopGrad(i * m + j) += outputGradient
       }
     }
+
     circuit.Backward()
+    // println(" - - " + memory.TopGrad.mkString(","))
 
     val memoryTop = unit.makeTensorUnit2(n, m)
     for(i <- 0 until n) {
@@ -203,7 +208,7 @@ object addressing_test {
         memory(i)(j).Val = x
 
         if(grad.isNaN || Math.abs(grad - memory(i)(j).Grad) > 1e-5) {
-          t.Fatalf(s"[ADDRESS] wrong memory gradient expected $grad, got ${memory(i)(j).Grad}")
+          t.Fatalf(s"[ADDRESS] wrong memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
         } else {
           t.Logf(s"[ADDRESS] OK memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
         }
@@ -339,7 +344,7 @@ object addressing_test {
     val w = new Array[Double](n)
     var sum: Double = 0
     for(i <- 0 until w.size) {
-      w(i) = Math.abs(0.01 * i + 0.1)//Math.random)
+      w(i) = Math.abs(Math.random)
       sum += w(i)
     }
     for(i <- 0 until w.size) {

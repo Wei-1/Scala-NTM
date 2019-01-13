@@ -58,4 +58,12 @@ object math {
       }
     }
   }
+
+  def Ger(alpha: Double, x: Array[Double], y: Array[Double], A: Array[Double]): Unit = {
+    // A += alpha * x * y^T
+    val n = x.size
+    val m = y.size
+    for(i <- 0 until m; j <- 0 until n)
+      A(j * m + i) += alpha * x(j) * y(i)
+  }
 }
