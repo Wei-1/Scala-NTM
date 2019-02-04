@@ -24,35 +24,77 @@ class Head(
   var grads: Array[Double] = null
 
   // EraseVector returns the erase vector of a memory head.
-  def EraseVal(): Array[Double] = vals.take(M)
-  def EraseGrad(): Array[Double] = grads.take(M)
+  // def EraseVal(): Array[Double] = vals.take(M)
+  def getEraseVal(i: Int): Double = vals(i)
+  def setEraseVal(i: Int, v: Double): Unit = vals(i) = v
+  def addEraseVal(i: Int, v: Double): Unit = vals(i) += v
+  // def EraseGrad(): Array[Double] = grads.take(M)
+  def getEraseGrad(i: Int): Double = grads(i)
+  def setEraseGrad(i: Int, v: Double): Unit = grads(i) = v
+  def addEraseGrad(i: Int, v: Double): Unit = grads(i) += v
 
   // AddVector returns the add vector of a memory head.
-  def AddVal(): Array[Double] = vals.drop(M).take(M)
-  def AddGrad(): Array[Double] = grads.drop(M).take(M)
+  // def AddVal(): Array[Double] = vals.drop(M).take(M)
+  def getAddVal(i: Int): Double = vals(M + i)
+  def setAddVal(i: Int, v: Double): Unit = vals(M + i) = v
+  def addAddVal(i: Int, v: Double): Unit = vals(M + i) += v
+  // def AddGrad(): Array[Double] = grads.drop(M).take(M)
+  def getAddGrad(i: Int): Double = grads(M + i)
+  def setAddGrad(i: Int, v: Double): Unit = grads(M + i) = v
+  def addAddGrad(i: Int, v: Double): Unit = grads(M + i) += v
 
   // K returns a head's key vector, which is the target data in the content addressing
   // step.
-  def KVal(): Array[Double] = vals.drop(2 * M).take(M)
-  def KGrad(): Array[Double] = grads.drop(2 * M).take(M)
+  // def KVal(): Array[Double] = vals.drop(2 * M).take(M)
+  def getKVal(i: Int): Double = vals(2 * M + i)
+  def setKVal(i: Int, v: Double): Unit = vals(2 * M + i) = v
+  def addKVal(i: Int, v: Double): Unit = vals(2 * M + i) += v
+  // def KGrad(): Array[Double] = grads.drop(2 * M).take(M)
+  def getKGrad(i: Int): Double = grads(2 * M + i)
+  def setKGrad(i: Int, v: Double): Unit = grads(2 * M + i) = v
+  def addKGrad(i: Int, v: Double): Unit = grads(2 * M + i) += v
 
   // Beta returns the key strength of a content addressing step.
-  def BetaVal(): Double = vals(3 * M)
-  def BetaGrad(): Double = grads(3 * M)
+  // def BetaVal(): Double = vals(3 * M)
+  def getBetaVal(): Double = vals(3 * M)
+  def setBetaVal(v: Double): Unit = vals(3 * M) = v
+  def addBetaVal(v: Double): Unit = vals(3 * M) += v
+  // def BetaGrad(): Double = grads(3 * M)
+  def getBetaGrad(): Double = grads(3 * M)
+  def setBetaGrad(v: Double): Unit = grads(3 * M) = v
+  def addBetaGrad(v: Double): Unit = grads(3 * M) += v
 
   // G returns the degree in which we want to choose content-addressing over
   // location-based-addressing.
-  def GVal(): Double = vals(3 * M + 1)
-  def GGrad(): Double = grads(3 * M + 1)
+  // def GVal(): Double = vals(3 * M + 1)
+  def getGVal(): Double = vals(3 * M + 1)
+  def setGVal(v: Double): Unit = vals(3 * M + 1) = v
+  def addGVal(v: Double): Unit = vals(3 * M + 1) += v
+  // def GGrad(): Double = grads(3 * M + 1)
+  def getGGrad(): Double = grads(3 * M + 1)
+  def setGGrad(v: Double): Unit = grads(3 * M + 1) = v
+  def addGGrad(v: Double): Unit = grads(3 * M + 1) += v
 
   // S returns a value indicating how much the weightings are rotated in a
   // location-based-addressing step.
-  def SVal(): Double = vals(3 * M + 2)
-  def SGrad(): Double = grads(3 * M + 2)
+  // def SVal(): Double = vals(3 * M + 2)
+  def getSVal(): Double = vals(3 * M + 2)
+  def setSVal(v: Double): Unit = vals(3 * M + 2) = v
+  def addSVal(v: Double): Unit = vals(3 * M + 2) += v
+  // def SGrad(): Double = grads(3 * M + 2)
+  def getSGrad(): Double = grads(3 * M + 2)
+  def setSGrad(v: Double): Unit = grads(3 * M + 2) = v
+  def addSGrad(v: Double): Unit = grads(3 * M + 2) += v
 
   // Gamma returns the degree in which the addressing weights are sharpened.
-  def GammaVal(): Double = vals(3 * M + 3)
-  def GammaGrad(): Double = grads(3 * M + 3)
+  // def GammaVal(): Double = vals(3 * M + 3)
+  def getGammaVal(): Double = vals(3 * M + 3)
+  def setGammaVal(v: Double): Unit = vals(3 * M + 3) = v
+  def addGammaVal(v: Double): Unit = vals(3 * M + 3) += v
+  // def GammaGrad(): Double = grads(3 * M + 3)
+  def getGammaGrad(): Double = grads(3 * M + 3)
+  def setGammaGrad(v: Double): Unit = grads(3 * M + 3) = v
+  def addGammaGrad(v: Double): Unit = grads(3 * M + 3) += v
 }
 
 object Head {
@@ -108,8 +150,14 @@ trait Controller {
 // arXiv preprint arXiv:1410.5401, 2014.
 class NTM(val Controller: Controller, var memOp: memOp = null) {
   def backward(): Unit = {
+
     memOp.Backward()
-    Controller.Backward()
+
+    // println(" - c20 - " + Controller.WeightsGrad().mkString(","))
+
+    Controller.Backward() // <--- ERROR
+
+    // println(" - c21 - " + Controller.WeightsGrad().mkString(","))
   }
 }
 
@@ -142,17 +190,16 @@ object NTM {
       machines(t) = NewNTM(machines(t-1), in(t))
     }
 
-    println(" - cm 0 - " + weights.mkString(","))
+    // println(" - cm 0 - " + weights.mkString(","))
 
     for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
       out.Model(t, m.Controller.YVal(), m.Controller.YGrad())
       m.backward() //  <---- ERROR HERE
-
-      println(" - cm 01 - " + weights.mkString(","))
+      // println(" - cm 01 - " + weights.mkString(","))
     }
 
-    println(" - cm 1 - " + weights.mkString(","))
+    // println(" - cm 1 - " + weights.mkString(","))
 
     // Compute gradients for the bias values of the initial memory and weights.
     for(i <- 0 until reads.size) {
@@ -163,7 +210,7 @@ object NTM {
       cas(i).Backward()
     }
 
-    println(" - cm 2 - " + weights.mkString(","))
+    // println(" - cm 2 - " + weights.mkString(","))
 
     // Copy gradients to the controller.
     val cwtm1 = c.Wtm1BiasGrad()

@@ -39,8 +39,8 @@ object addressing_test {
       }
     }
     // We want to check the case where Beta > 0 and Gamma > 1.
-    heads(0).vals(3 * heads(0).M) = 0.137350
-    heads(0).vals(3 * heads(0).M + 3) = 1.9876
+    heads(0).setBetaVal(0.137350)
+    heads(0).setGammaVal(1.9876)
 
     // println("memory TV " + memory.TopVal.mkString(","))
 
@@ -95,11 +95,12 @@ object addressing_test {
     for(i <- 0 until heads.size) {
       val h = heads(i)
       // Content-based addressing
-      val beta = Math.exp(h.BetaVal())
+      val beta = Math.exp(h.getBetaVal())
       val wc = new Array[Double](memory.size)
+      val kVal = (0 until h.M).map(i => h.getKVal(i)).toArray
       var sum: Double = 0
       for(j <- 0 until wc.size) {
-        wc(j) = Math.exp(beta * cosineSimilarity(h.KVal(), unitVals(memory(j))))
+        wc(j) = Math.exp(beta * cosineSimilarity(kVal, unitVals(memory(j))))
         sum += wc(j)
       }
       for(j <- 0 until wc.size) {
@@ -107,14 +108,14 @@ object addressing_test {
       }
 
       // Content-based, location-based addressing gate
-      val g = Sigmoid(h.GVal())
+      val g = Sigmoid(h.getGVal())
       for(j <- 0 until wc.size) {
         wc(j) = g * wc(j) + (1 - g) * h.Wtm1.TopVal(j)
       }
 
       // Location-based addressing
       val n = weights(i).size
-      val s = (2 * Sigmoid(h.SVal()) - 1) - ((2 * Sigmoid(h.SVal()) - 1) / n).toInt * n
+      val s = (2 * Sigmoid(h.getSVal()) - 1) - ((2 * Sigmoid(h.getSVal()) - 1) / n).toInt * n
       for(j <- 0 until n) {
         val imj = (j + s.toInt) % n
         val simj = 1 - (s - Math.floor(s))
@@ -122,7 +123,7 @@ object addressing_test {
       }
 
       // Refocusing
-      val gamma = Math.log(Math.exp(h.GammaVal()) + 1) + 1
+      val gamma = Math.log(Math.exp(h.getGammaVal()) + 1) + 1
       sum = 0.0
       for(j <- 0 until weights(i).size) {
         weights(i)(j) = Math.pow(weights(i)(j), gamma)
@@ -146,13 +147,12 @@ object addressing_test {
     val erase = makeTensor2(heads.size, memory(0).size)
     val add = makeTensor2(heads.size, memory(0).size)
     for(k <- 0 until heads.size) {
-      val eraseVec = heads(k).EraseVal()
+      val head = heads(k)
       for(i <- 0 until erase(k).size) {
-        erase(k)(i) = Sigmoid(eraseVec(i))
+        erase(k)(i) = Sigmoid(head.getEraseVal(i))
       }
-      val addVec = heads(k).AddVal()
       for(i <- 0 until add(k).size) {
-        add(k)(i) = Sigmoid(addVec(i))
+        add(k)(i) = Sigmoid(head.getAddVal(i))
       }
     }
     val newMem = makeTensor2(memory.size, memory(0).size)
@@ -219,20 +219,20 @@ object addressing_test {
   def checkK(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
-      for(i <- 0 until hd.KVal().size) {
-        val x = hd.KVal()(i)
+      for(i <- 0 until hd.M) {
+        val x = hd.getKVal(i)
         val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
         val xph = x + h
-        hd.KVal()(i) = xph
+        hd.setKVal(i, xph)
         val dx = xph - x
         val axph = addressing(heads, memory)
         val grad = (axph - ax) / dx
-        hd.KVal()(i) = x
+        hd.setKVal(i, x)
 
-        if(grad.isNaN || Math.abs(grad - hd.KGrad()(i)) > 1e-5) {
-          t.Fatalf(s"[ADDRESS] wrong beta[$i] gradient expected $grad, got ${hd.KGrad()(i)}")
+        if(grad.isNaN || Math.abs(grad - hd.getKGrad(i)) > 1e-5) {
+          t.Fatalf(s"[ADDRESS] wrong beta[$i] gradient expected $grad, got ${hd.getKGrad(i)}")
         } else {
-          t.Logf(s"[ADDRESS] OK K[$k][$i] gradient expected $grad, got ${hd.KGrad()(i)}")
+          t.Logf(s"[ADDRESS] OK K[$k][$i] gradient expected $grad, got ${hd.getKGrad(i)}")
         }
       }
     }
@@ -241,19 +241,19 @@ object addressing_test {
   def checkBeta(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
-      val x = hd.BetaVal()
+      val x = hd.getBetaVal()
       val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
       val xph = x + h
-      hd.vals(3 * hd.M) = xph
+      hd.setBetaVal(xph)
       val dx = xph - x
       val axph = addressing(heads, memory)
       val grad = (axph - ax) / dx
-      hd.vals(3 * hd.M) = x
+      hd.setBetaVal(x)
 
-      if(grad.isNaN || Math.abs(grad - hd.BetaGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong beta gradient expected $grad, got ${hd.BetaGrad()}")
+      if(grad.isNaN || Math.abs(grad - hd.getBetaGrad()) > 1e-5) {
+        t.Fatalf(s"[ADDRESS] wrong beta gradient expected $grad, got ${hd.getBetaGrad()}")
       } else {
-        t.Logf(s"[ADDRESS] OK beta[$k] gradient expected $grad, got ${hd.BetaGrad()}")
+        t.Logf(s"[ADDRESS] OK beta[$k] gradient expected $grad, got ${hd.getBetaGrad()}")
       }
     }
   }
@@ -283,19 +283,19 @@ object addressing_test {
   def checkG(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
-      val x = hd.GVal()
+      val x = hd.getGVal()
       val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
       val xph = x + h
-      hd.vals(3 * hd.M + 1) = xph
+      hd.setGVal(xph)
       val dx = xph - x
       val axph = addressing(heads, memory)
       val grad = (axph - ax) / dx
-      hd.vals(3 * hd.M + 1) = x
+      hd.setGVal(x)
 
-      if(grad.isNaN || Math.abs(grad - hd.GGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong G gradient expected $grad, got ${hd.GGrad()}")
+      if(grad.isNaN || Math.abs(grad - hd.getGGrad()) > 1e-5) {
+        t.Fatalf(s"[ADDRESS] wrong G gradient expected $grad, got ${hd.getGGrad()}")
       } else {
-        t.Logf(s"[ADDRESS] OK G[$k] agradient expected $grad, got ${hd.GGrad()}")
+        t.Logf(s"[ADDRESS] OK G[$k] agradient expected $grad, got ${hd.getGGrad()}")
       }
     }
   }
@@ -303,19 +303,19 @@ object addressing_test {
   def checkS(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
-      val x = hd.SVal()
+      val x = hd.getSVal()
       val h = machineEpsilonSqrt * Math.max(x.abs, 1)
       val xph = x + h
-      hd.vals(3 * hd.M + 2) = xph
+      hd.setSVal(xph)
       val dx = xph - x
       val axph = addressing(heads, memory)
       val grad = (axph - ax) / dx
-      hd.vals(3 * hd.M + 2) = x
+      hd.setSVal(x)
 
-      if(grad.isNaN || Math.abs(grad - hd.SGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong S gradient expected $grad, got ${hd.SGrad()}")
+      if(grad.isNaN || Math.abs(grad - hd.getSGrad()) > 1e-5) {
+        t.Fatalf(s"[ADDRESS] wrong S gradient expected $grad, got ${hd.getSGrad()}")
       } else {
-        t.Logf(s"[ADDRESS] OK S[$k] agradient expected $grad, got ${hd.SGrad()}")
+        t.Logf(s"[ADDRESS] OK S[$k] agradient expected $grad, got ${hd.getSGrad()}")
       }
     }
   }
@@ -323,19 +323,19 @@ object addressing_test {
   def checkGamma(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
     for(k <- 0 until heads.size) {
       val hd = heads(k)
-      val x = hd.GammaVal()
+      val x = hd.getGammaVal()
       val h = machineEpsilonSqrt * Math.max(x.abs, 1)
       val xph = x + h
-      hd.vals(3 * hd.M + 3) = xph
+      hd.setGammaVal(xph)
       val dx = xph - x
       val axph = addressing(heads, memory)
       val grad = (axph - ax) / dx
-      hd.vals(3 * hd.M + 3) = x
+      hd.setGammaVal(x)
 
-      if(grad.isNaN || Math.abs(grad - hd.GammaGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong gamma gradient expected $grad, got ${hd.GammaGrad()}")
+      if(grad.isNaN || Math.abs(grad - hd.getGammaGrad()) > 1e-5) {
+        t.Fatalf(s"[ADDRESS] wrong gamma gradient expected $grad, got ${hd.getGammaGrad()}")
       } else {
-        t.Logf(s"[ADDRESS] OK gamma[$k] gradient expected $grad, got ${hd.GammaGrad()}")
+        t.Logf(s"[ADDRESS] OK gamma[$k] gradient expected $grad, got ${hd.getGammaGrad()}")
       }
     }
   }
