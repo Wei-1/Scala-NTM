@@ -2,7 +2,7 @@ package ntm
 
 import math._
 
-object cntl1_test {
+object ctrl_test {
   def TestLogisticModel(t: T) {
     val times = 9
     val x = makeTensor2(times, 4)
@@ -21,10 +21,10 @@ object cntl1_test {
     val m = 2
     val h1Size = 3
     val numHeads = 2
-    val c = controller1.NewEmptyController1(x(0).size, y(0).size, h1Size, numHeads, n, m)
-    val weights = c.WeightsVal()
-    for(i <- 0 until weights.size) {
-      weights(i) = 2 *    0.001 * i + 0.2//Math.random
+    val c = Controller.NewEmptyController(x(0).size, y(0).size, h1Size, numHeads, n, m)
+    val weights = c.WeightsValVec()
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+      weights(i)(j) = 2 *    0.001 * i + 0.2//Math.random
     }
     // println(" - cm " + c.WeightsGrad().mkString(","))
     val model = new LogisticModel(Y = y)
@@ -50,10 +50,10 @@ object cntl1_test {
     val m = 2
     val h1Size = 3
     val numHeads = 2
-    val c = controller1.NewEmptyController1(x(0).size, outputSize, h1Size, numHeads, n, m)
-    val weights = c.WeightsVal()
-    for(i <- 0 until weights.size) {
-      weights(i) = 2 *    0.001 * i + 0.2//Math.random
+    val c = Controller.NewEmptyController(x(0).size, outputSize, h1Size, numHeads, n, m)
+    val weights = c.WeightsValVec()
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+      weights(i)(j) = 2 *    0.001 * i + 0.2//Math.random
     }
 
     val model = new MultinomialModel(Y = y)
@@ -62,7 +62,7 @@ object cntl1_test {
   }
 
   // A ControllerForward is a ground truth implementation of the forward pass of a controller.
-  def ControllerForward(c1: controller1, reads: Array[Array[Double]], x: Array[Double]): (Array[Double], Array[Head]) = {
+  def ControllerForward(c1: Controller, reads: Array[Array[Double]], x: Array[Double]): (Array[Double], Array[Head]) = {
     val c = c1
     var readX = Array[Double]()
     for(read <- reads) {
@@ -75,7 +75,7 @@ object cntl1_test {
     }
     readX :+= 1.0
     var h1 = new Array[Double](c.h1Size)
-    val wh1 = c.wh1Val()
+    val wh1 = c.wh1ValVec()
     for(i <- 0 until h1.size) {
       var v: Double = 0.0
       for(j <- 0 until readX.size) {
@@ -84,19 +84,18 @@ object cntl1_test {
       h1(i) = Sigmoid(v)
     }
 
-    val out = new Array[Double](c.wyRows())
-    val wy = c.wyVal()
+    val out = Controller.newOutMemory(c)//new Array[Double](c.wyRows())
+    val wy = c.wyValVec()
     h1 :+= 1.0
-    for(i <- 0 until out.size) {
+    for(i <- 0 until out.size; j <- 0 until out(i).size) {
       var v: Double = 0.0
-      for(j <- 0 until h1.size) {
-        v += wy(i)(j) * h1(j)
-      }
-      out(i) = v
+      for(k <- 0 until h1.size)
+        v += wy(k)(i)(j) * h1(k)
+      out(i)(j) = v
     }
     val prediction = new Array[Double](c.ySize)
     for(i <- 0 until prediction.size) {
-      prediction(i) = out(i)
+      prediction(i) = out.head(i)
     }
     val heads = new Array[Head](c.numHeads)
     for(i <- 0 until heads.size) {
@@ -105,7 +104,7 @@ object cntl1_test {
       heads(i).vals = new Array[Double](hul)
       heads(i).grads = new Array[Double](hul)
       for(j <- 0 until heads(i).vals.size) {
-        heads(i).vals(j) += out(c.ySize + i * hul + j)
+        heads(i).vals(j) += out(i + 1)(j)
       }
     }
 
@@ -113,17 +112,15 @@ object cntl1_test {
   }
 
   def loss(
-    c: controller1,
-    forward: (controller1, Array[Array[Double]], Array[Double]) => (Array[Double], Array[Head]),
+    c: Controller,
+    forward: (Controller, Array[Array[Double]], Array[Double]) => (Array[Double], Array[Head]),
     in: Array[Array[Double]],
     model: DensityModel
   ): Double = {
     // Initialize memory as in the function ForwardBackward
     var mem = unit.makeTensorUnit2(c.MemoryN(), c.MemoryM())
-    for(i <- 0 until mem.size) {
-      for(j <- 0 until mem(i).size) {
-        mem(i)(j).Val = c.Mtm1BiasVal()(i * c.MemoryM() + j)
-      }
+    for(i <- 0 until mem.size; j <- 0 until mem(i).size) {
+      mem(i)(j).Val = c.Mtm1BiasValVec()(i)(j)
     }
     var wtm1s = new Array[refocus](c.NumHeads())
     for(i <- 0 until wtm1s.size) {
@@ -131,7 +128,7 @@ object cntl1_test {
         TopVal = new Array[Double](c.MemoryN()),
         TopGrad = new Array[Double](c.MemoryN())
       )
-      val bs = c.Wtm1BiasVal().take((i + 1) * c.MemoryN()).drop(i * c.MemoryN())
+      val bs = c.Wtm1BiasValVec()(i)
       var sum: Double = 0
       for(j <- 0 until bs.size) {
         wtm1s(i).TopVal(j) = Math.exp(bs(j))
@@ -179,28 +176,29 @@ object cntl1_test {
 
   def checkGradients(
     t: T,
-    c: controller1,
-    forward: (controller1, Array[Array[Double]], Array[Double]) => (Array[Double], Array[Head]),
+    c: Controller,
+    forward: (Controller, Array[Array[Double]], Array[Double]) => (Array[Double], Array[Head]),
     in: Array[Array[Double]],
     model: DensityModel
   ) {
     val lx = loss(c, forward, in, model)
 
-    for(i <- 0 until c.WeightsVal().size) {
-      val x = c.WeightsVal()(i)
+    val value = c.WeightsValVec()
+    for(i <- 0 until value.size; j <- 0 until value(i).size) {
+      val x = value(i)(j)
       val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
       val xph = x + h
-      c.WeightsVal()(i) = xph
+      value(i)(j) = xph
       val lxph = loss(c, forward, in, model)
-      c.WeightsVal()(i) = x
+      value(i)(j) = x
       val grad = (lxph - lx) / (xph - x)
 
-      val wGrad = c.WeightsGrad()(i)
+      val wGrad = c.WeightsGradVec()(i)(j)
       val tag = c.WeightsDesc(i)
-      if(grad.isNaN || Math.abs(grad-wGrad) > 1e-5) {
-        t.Errorf(s"[CNTL] wrong $tag gradient expected $grad, got $wGrad")
+      if(grad.isNaN || Math.abs(grad - wGrad) > 1e-5) {
+        t.Errorf(s"[CTRL] wrong $tag gradient expected $grad, got $wGrad")
       } else {
-        t.Logf(s"[CNTL] OK $tag gradient expected $grad, got $wGrad")
+        t.Logf(s"[CTRL] OK $tag gradient expected $grad, got $wGrad")
       }
     }
   }

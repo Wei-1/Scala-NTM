@@ -24,74 +24,60 @@ class Head(
   var grads: Array[Double] = null
 
   // EraseVector returns the erase vector of a memory head.
-  // def EraseVal(): Array[Double] = vals.take(M)
   def getEraseVal(i: Int): Double = vals(i)
   def setEraseVal(i: Int, v: Double): Unit = vals(i) = v
   def addEraseVal(i: Int, v: Double): Unit = vals(i) += v
-  // def EraseGrad(): Array[Double] = grads.take(M)
   def getEraseGrad(i: Int): Double = grads(i)
   def setEraseGrad(i: Int, v: Double): Unit = grads(i) = v
   def addEraseGrad(i: Int, v: Double): Unit = grads(i) += v
 
   // AddVector returns the add vector of a memory head.
-  // def AddVal(): Array[Double] = vals.drop(M).take(M)
   def getAddVal(i: Int): Double = vals(M + i)
   def setAddVal(i: Int, v: Double): Unit = vals(M + i) = v
   def addAddVal(i: Int, v: Double): Unit = vals(M + i) += v
-  // def AddGrad(): Array[Double] = grads.drop(M).take(M)
   def getAddGrad(i: Int): Double = grads(M + i)
   def setAddGrad(i: Int, v: Double): Unit = grads(M + i) = v
   def addAddGrad(i: Int, v: Double): Unit = grads(M + i) += v
 
-  // K returns a head's key vector, which is the target data in the content addressing
-  // step.
-  // def KVal(): Array[Double] = vals.drop(2 * M).take(M)
+  // K returns a head's key vector,
+  // which is the target data in the content addressing step.
   def getKVal(i: Int): Double = vals(2 * M + i)
   def setKVal(i: Int, v: Double): Unit = vals(2 * M + i) = v
   def addKVal(i: Int, v: Double): Unit = vals(2 * M + i) += v
-  // def KGrad(): Array[Double] = grads.drop(2 * M).take(M)
   def getKGrad(i: Int): Double = grads(2 * M + i)
   def setKGrad(i: Int, v: Double): Unit = grads(2 * M + i) = v
   def addKGrad(i: Int, v: Double): Unit = grads(2 * M + i) += v
 
   // Beta returns the key strength of a content addressing step.
-  // def BetaVal(): Double = vals(3 * M)
   def getBetaVal(): Double = vals(3 * M)
   def setBetaVal(v: Double): Unit = vals(3 * M) = v
   def addBetaVal(v: Double): Unit = vals(3 * M) += v
-  // def BetaGrad(): Double = grads(3 * M)
   def getBetaGrad(): Double = grads(3 * M)
   def setBetaGrad(v: Double): Unit = grads(3 * M) = v
   def addBetaGrad(v: Double): Unit = grads(3 * M) += v
 
   // G returns the degree in which we want to choose content-addressing over
   // location-based-addressing.
-  // def GVal(): Double = vals(3 * M + 1)
   def getGVal(): Double = vals(3 * M + 1)
   def setGVal(v: Double): Unit = vals(3 * M + 1) = v
   def addGVal(v: Double): Unit = vals(3 * M + 1) += v
-  // def GGrad(): Double = grads(3 * M + 1)
   def getGGrad(): Double = grads(3 * M + 1)
   def setGGrad(v: Double): Unit = grads(3 * M + 1) = v
   def addGGrad(v: Double): Unit = grads(3 * M + 1) += v
 
   // S returns a value indicating how much the weightings are rotated in a
   // location-based-addressing step.
-  // def SVal(): Double = vals(3 * M + 2)
   def getSVal(): Double = vals(3 * M + 2)
   def setSVal(v: Double): Unit = vals(3 * M + 2) = v
   def addSVal(v: Double): Unit = vals(3 * M + 2) += v
-  // def SGrad(): Double = grads(3 * M + 2)
   def getSGrad(): Double = grads(3 * M + 2)
   def setSGrad(v: Double): Unit = grads(3 * M + 2) = v
   def addSGrad(v: Double): Unit = grads(3 * M + 2) += v
 
   // Gamma returns the degree in which the addressing weights are sharpened.
-  // def GammaVal(): Double = vals(3 * M + 3)
   def getGammaVal(): Double = vals(3 * M + 3)
   def setGammaVal(v: Double): Unit = vals(3 * M + 3) = v
   def addGammaVal(v: Double): Unit = vals(3 * M + 3) += v
-  // def GammaGrad(): Double = grads(3 * M + 3)
   def getGammaGrad(): Double = grads(3 * M + 3)
   def setGammaGrad(v: Double): Unit = grads(3 * M + 3) = v
   def addGammaGrad(v: Double): Unit = grads(3 * M + 3) += v
@@ -103,60 +89,13 @@ object Head {
   def headUnitsLen(m: Int): Int = 3 * m + 4
 }
 
-// The Controller Interface is implemented by NTM controller networks that wish to
-// operate with memory banks in a NTM.
-trait Controller {
-  // Heads returns the emitted memory heads.
-  def Heads(): Array[Head]
-  // YVal returns the values of the output of the Controller.
-  def YVal(): Array[Double]
-  // YVal returns the gradients of the output of the Controller.
-  def YGrad(): Array[Double]
-
-  // Forward creates a new Controller which shares the same Internal weights,
-  // and performs a forward pass whose results can be retrived by Heads and Y.
-  def Forward(reads: Array[memRead], x: Array[Double]): Controller
-  // Backward performs a backward pass,
-  // assuming the gradients on Heads and Y are already set.
-  def Backward(): Unit
-
-  // Wtm1BiasVal returns the values of the bias of the previous weight.
-  // The layout is |-- 1st head weights (size memoryN) --|-- 2nd head --|-- ... --|
-  // The length of the returned slice is numHeads * memoryN.
-  def Wtm1BiasVal(): Array[Double]
-  def Wtm1BiasGrad(): Array[Double]
-
-  // M1mt1BiasVal returns the values of the bias of the memory bank.
-  // The returned matrix is in row major order.
-  def Mtm1BiasVal(): Array[Double]
-  def Mtm1BiasGrad(): Array[Double]
-
-  // WeightsVal returns the values of all weights.
-  def WeightsVal(): Array[Double]
-  // WeightsGrad returns the gradients of all weights.
-  def WeightsGrad(): Array[Double]
-  // WeightsDesc returns the descriptions of a weight.
-  def WeightsDesc(i: Int): String
-
-  // NumHeads returns the number of memory heads of a controller.
-  def NumHeads(): Int
-  // MemoryN returns the number of vectors of the memory bank of a controller.
-  def MemoryN(): Int
-  // MemoryM returns the size of a vector in the memory bank of a controller.
-  def MemoryM(): Int
-}
-
 // A NTM is a neural turing machine as described in A.Graves, G. Wayne, and I. Danihelka.
 // arXiv preprint arXiv:1410.5401, 2014.
 class NTM(val Controller: Controller, var memOp: memOp = null) {
   def backward(): Unit = {
-
     memOp.Backward()
-
     // println(" - c20 - " + Controller.WeightsGrad().mkString(","))
-
     Controller.Backward() // <--- ERROR
-
     // println(" - c21 - " + Controller.WeightsGrad().mkString(","))
   }
 }
@@ -175,9 +114,9 @@ object NTM {
   // ForwardBackward computes a controller's prediction and gradients with respect to the
   // given ground truth input and output values.
   def ForwardBackward(c: Controller, in: Array[Array[Double]], out: DensityModel): Array[NTM] = {
-    val weights = c.WeightsGrad()
-    for(i <- 0 until weights.size) {
-      weights(i) = 0
+    val weights = c.WeightsGradVec()
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+      weights(i)(j) = 0
     }
 
     // Set the empty NTM's memory and head weights to their bias values.
@@ -191,16 +130,14 @@ object NTM {
     }
 
     // println(" - cm 0 - " + weights.mkString(","))
-
     for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
-      out.Model(t, m.Controller.YVal(), m.Controller.YGrad())
+      out.Model(t, m.Controller.YValVec(), m.Controller.YGradVec())
       m.backward() //  <---- ERROR HERE
       // println(" - cm 01 - " + weights.mkString(","))
     }
 
     // println(" - cm 1 - " + weights.mkString(","))
-
     // Compute gradients for the bias values of the initial memory and weights.
     for(i <- 0 until reads.size) {
       reads(i).Backward()
@@ -211,13 +148,10 @@ object NTM {
     }
 
     // println(" - cm 2 - " + weights.mkString(","))
-
     // Copy gradients to the controller.
-    val cwtm1 = c.Wtm1BiasGrad()
-    for(i <- 0 until cas.size) {
-      for(j <- 0 until cas(i).Units.size) {
-        cwtm1(i * c.MemoryN() + j) = cas(i).Units(j).Top.Grad
-      }
+    val cwtm1 = c.Wtm1BiasGradVec()
+    for(i <- 0 until cas.size; j <- 0 until cas(i).Units.size) {
+      cwtm1(i)(j) = cas(i).Units(j).Top.Grad
     }
     // println(" - cm 3 - " + weights.mkString(","))
     machines
@@ -231,20 +165,20 @@ object NTM {
   }
 
   def makeEmptyNTM(c: Controller): (NTM, Array[memRead], Array[contentAddressing]) = {
-    val cwtm1 = c.Wtm1BiasVal()
+    val cwtm1 = c.Wtm1BiasValVec()
     val unws = new Array[Array[betaSimilarity]](c.NumHeads())
     for(i <- 0 until unws.size) {
       unws(i) = new Array[betaSimilarity](c.MemoryN())
       for(j <- 0 until unws(i).size) {
-        val v = cwtm1(i * c.MemoryN() + j)
+        val v = cwtm1(i)(j)
         unws(i)(j) = new betaSimilarity(Top = new unit(Val = v))
       }
     }
 
     val mtm1 = new writtenMemory(
       N = c.MemoryN(),
-      TopVal = c.Mtm1BiasVal(),
-      TopGrad = c.Mtm1BiasGrad()
+      TopVal = c.Mtm1BiasValVec(),
+      TopGrad = c.Mtm1BiasGradVec()
     )
 
     val wtm1s = new Array[refocus](c.NumHeads())
@@ -274,7 +208,7 @@ object NTM {
   def Predictions(machines: Array[NTM]): Array[Array[Double]] = {
     val pdts = new Array[Array[Double]](machines.size)
     for(t <- 0 until pdts.size) {
-      pdts(t) = machines(t).Controller.YVal()
+      pdts(t) = machines(t).Controller.YValVec()
     }
     pdts
   }
@@ -300,15 +234,16 @@ object NTM {
 // SGDMomentum implements stochastic gradient descent with momentum.
 class SGDMomentum (
   val C: Controller,
-  val PrevD: Array[Double]
+  val PrevD: Array[Array[Double]]
 ){
   def Train(x: Array[Array[Double]], y: DensityModel, alpha: Double, mt: Double): Array[NTM] = {
     val machines = NTM.ForwardBackward(C, x, y)
-    val weights = C.WeightsVal()
-    for(i <- 0 until C.WeightsGrad().size) {
-      val d = -alpha * C.WeightsGrad()(i) + mt * PrevD(i)
-      weights(i) += d
-      PrevD(i) = d
+    val grad = C.WeightsGradVec()
+    val value = C.WeightsValVec()
+    for(i <- 0 until grad.size; j <- 0 until grad(i).size) {
+      val d = -alpha * grad(i)(j) + mt * PrevD(i)(j)
+      value(i)(j) += d
+      PrevD(i)(j) = d
     }
     machines
   }
@@ -318,7 +253,8 @@ object SGDMomentum {
   def NewSGDMomentum(c: Controller): SGDMomentum = {
     new SGDMomentum(
       C = c,
-      PrevD = new Array[Double](c.WeightsVal().size)
+      // PrevD = new Array[Double](c.WeightsVal().size)
+      PrevD = Controller.newControllerMemory(c)
     )
   }
 }
@@ -328,9 +264,9 @@ object SGDMomentum {
 // preprint arXiv:1308.0850.
 class RMSProp(
   val C: Controller,
-  val N: Array[Double],
-  val G: Array[Double],
-  val D: Array[Double]
+  val N: Array[Array[Double]],
+  val G: Array[Array[Double]],
+  val D: Array[Array[Double]]
 ){
   def Train(x: Array[Array[Double]], y: DensityModel, a: Double, b: Double, c: Double, d: Double): Array[NTM] = {
     val machines = NTM.ForwardBackward(C, x, y)
@@ -339,15 +275,15 @@ class RMSProp(
   }
 
   def update(a: Double, b: Double, c: Double, d: Double): Unit = {
-    val grad = C.WeightsGrad()
-    val value = C.WeightsVal()
-    for(i <- 0 until grad.size) {
-      val grad2i = grad(i) * grad(i)
-      N(i) = a * N(i) + (1 - a) * grad2i
-      G(i) = a * G(i) + (1 - a) * grad(i)
-      val rmsi = grad(i) / Math.sqrt(N(i) - G(i) * G(i) + d)
-      D(i) = b * D(i) - c * rmsi
-      value(i) += D(i)
+    val grad = C.WeightsGradVec()
+    val value = C.WeightsValVec()
+    for(i <- 0 until grad.size; j <- 0 until grad(i).size) {
+      val grad2i = grad(i)(j) * grad(i)(j)
+      N(i)(j) = a * N(i)(j) + (1 - a) * grad2i
+      G(i)(j) = a * G(i)(j) + (1 - a) * grad(i)(j)
+      val rmsi = grad(i)(j) / Math.sqrt(N(i)(j) - G(i)(j) * G(i)(j) + d)
+      D(i)(j) = b * D(i)(j) - c * rmsi
+      value(i)(j) += D(i)(j)
     }
   }
 }
@@ -356,9 +292,12 @@ object RMSProp {
   def NewRMSProp(c: Controller): RMSProp = {
     new RMSProp(
       C = c,
-      N = new Array[Double](c.WeightsVal().size),
-      G = new Array[Double](c.WeightsVal().size),
-      D = new Array[Double](c.WeightsVal().size)
+      // N = new Array[Double](c.WeightsVal().size),
+      N = Controller.newControllerMemory(c),
+      // G = new Array[Double](c.WeightsVal().size),
+      G = Controller.newControllerMemory(c),
+      // D = new Array[Double](c.WeightsVal().size)
+      D = Controller.newControllerMemory(c)
     )
   }
 }

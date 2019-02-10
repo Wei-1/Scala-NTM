@@ -35,8 +35,8 @@ object T {
     val t = new T()
 
     addressing_test.TestCircuit(t)
-    cntl1_test.TestLogisticModel(t)
-    cntl1_test.TestMultinomialModel(t)
+    ctrl_test.TestLogisticModel(t)
+    ctrl_test.TestMultinomialModel(t)
     ntm_test.TestRMSProp(t)
     
     t.endT

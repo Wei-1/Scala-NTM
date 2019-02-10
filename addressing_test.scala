@@ -18,13 +18,11 @@ object addressing_test {
     val m = 2
     val memory = new writtenMemory(
       N = n,
-      TopVal = new Array[Double](n * m),
-      TopGrad = new Array[Double](n * m),
+      TopVal = Array.ofDim[Double](n, m),
+      TopGrad = Array.ofDim[Double](n, m)
     )
-    for(i <- 0 until n) {
-      for(j <- 0 until m) {
-        memory.TopVal(i * m + j) = Math.random
-      }
+    for(i <- 0 until n; j <- 0 until m) {
+      memory.TopVal(i)(j) = Math.random
     }
 
     val hul = Head.headUnitsLen(m)
@@ -59,21 +57,17 @@ object addressing_test {
         circuit.R(i).TopGrad(j) += outputGradient
       }
     }
-    for(i <- 0 until n) {
-      for(j <- 0 until m) {
-        circuit.WM.TopGrad(i * m + j) += outputGradient
-      }
+    for(i <- 0 until n; j <- 0 until m) {
+      circuit.WM.TopGrad(i)(j) += outputGradient
     }
 
     circuit.Backward()
     // println(" - - " + memory.TopGrad.mkString(","))
 
     val memoryTop = unit.makeTensorUnit2(n, m)
-    for(i <- 0 until n) {
-      for(j <- 0 until m) {
-        memoryTop(i)(j).Val = memory.TopVal(i * m + j)
-        memoryTop(i)(j).Grad = memory.TopGrad(i * m + j)
-      }
+    for(i <- 0 until n; j <- 0 until m) {
+      memoryTop(i)(j).Val = memory.TopVal(i)(j)
+      memoryTop(i)(j).Grad = memory.TopGrad(i)(j)
     }
     val ax = addressing(heads, memoryTop)
     checkGamma(t, heads, memoryTop, ax)
