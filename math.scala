@@ -1,18 +1,15 @@
 package ntm
 
 object math {
-  val machineEpsilon     = 2.2e-16
-  val machineEpsilonSqrt = 1e-8 // math.Sqrt(machineEpsilon)
+  val machineEpsilon = 2.2e-16
+  val machineEpsilonSqrt = 1e-8 // Math.sqrt(machineEpsilon)
 
-  // Sigmoid computes 1 / (1 + math.Exp(-x))
-  def Sigmoid(x: Double): Double = {
-    1.0 / (1 + Math.exp(-x))
-  }
+  // Sigmoid computes 1 / (1 + Math.exp(-x))
+  def Sigmoid(x: Double): Double =
+    1.0 / (1.0 + Math.exp(-x))
 
-  def delta(a: Int, b: Int): Double = {
-    if(a == b) 1.0
-    else 0.0
-  }
+  def delta(a: Int, b: Int): Double =
+    if(a == b) 1.0 else 0.0
 
   def cosineSimilarity(u: Array[Double], v: Array[Double]): Double = {
     var sum: Double = 0
@@ -26,44 +23,29 @@ object math {
     sum / Math.sqrt(usum * vsum)
   }
 
-  def makeTensor2(n: Int , m: Int): Array[Array[Double]] = {
+  def makeTensor2(n: Int , m: Int): Array[Array[Double]] =
     Array.ofDim[Double](n, m)
-  }
 
   // Sprint2 pretty prints a 2 dimensional tensor.
-  def Sprint2(t: Array[Array[Double]]): String = {
+  def Sprint2(t: Array[Array[Double]]): String =
     t.map(_.mkString("[", " ", "]")).mkString("[", "", "]")
-  }
 
-  def Gemv(trans: Boolean, alpha: Double, M2: Array[Double],
+  // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
+  // y = alpha * A * x + beta * y; if t == blas.NoTrans
+  def Gemv(trans: Boolean, alpha: Double, M2: Array[Array[Double]],
     x: Array[Double], beta: Double, y: Array[Double]): Unit = {
     // y = alpha * A * x + beta * y; if t == blas.NoTrans
     val n = x.size
     val m = y.size
-    if(beta == 1) {
-      if(trans) {
-        for(i <- 0 until n; j <- 0 until m)
-          y(j) += alpha * M2(i * m + j) * x(i)
-      } else {
-        for(i <- 0 until n; j <- 0 until m)
-          y(j) += alpha * M2(j * n + i) * x(i)
-      }
-    } else {
-      if(trans) {
-        for(i <- 0 until n; j <- 0 until m)
-          y(j) = alpha * M2(i * m + j) * x(i) + beta * y(j)
-      } else {
-        for(i <- 0 until n; j <- 0 until m)
-          y(j) = alpha * M2(j * n + i) * x(i) + beta * y(j)
-      }
-    }
+    for(i <- 0 until n; j <- 0 until m)
+      y(j) = alpha * (if(trans) M2(i)(j) else M2(j)(i)) * x(i) + beta * y(j)
   }
 
-  def Ger(alpha: Double, x: Array[Double], y: Array[Double], A: Array[Double]): Unit = {
+  def Ger(alpha: Double, x: Array[Double], y: Array[Double], A: Array[Array[Double]]): Unit = {
     // A += alpha * x * y^T
     val n = x.size
     val m = y.size
     for(i <- 0 until m; j <- 0 until n)
-      A(j * m + i) += alpha * x(j) * y(i)
+      A(j)(i) += alpha * x(j) * y(i)
   }
 }

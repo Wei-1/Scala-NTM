@@ -22,7 +22,7 @@ object addressing_test {
       TopGrad = Array.ofDim[Double](n, m)
     )
     for(i <- 0 until n; j <- 0 until m) {
-      memory.TopVal(i)(j) = Math.random
+      memory.TopVal(i)(j) = 0.1 + 0.001 * i + 0.01 * j// Math.random
     }
 
     val hul = Head.headUnitsLen(m)
@@ -33,23 +33,20 @@ object addressing_test {
       heads(i).grads = new Array[Double](hul)
       heads(i).Wtm1 = randomRefocus(n)
       for(j <- 0 until hul) {
-        heads(i).vals(j) = Math.random
+        heads(i).vals(j) = 0.1 + 0.001 * i + 0.01 * j// Math.random
       }
     }
     // We want to check the case where Beta > 0 and Gamma > 1.
     heads(0).setBetaVal(0.137350)
     heads(0).setGammaVal(1.9876)
-
     // println("memory TV " + memory.TopVal.mkString(","))
 
     val circuit = memOp.newMemOp(heads, memory)
-    for(i <- 0 until circuit.W.size) {
-      for(j <- 0 until circuit.W(i).TopGrad.size) {
-        if(i == 0 && j == 0) {
-          circuit.W(i).TopGrad(j) += w11OutputGradient
-        } else {
-          circuit.W(i).TopGrad(j) += outputGradient
-        }
+    for(i <- 0 until circuit.W.size; j <- 0 until circuit.W(i).TopGrad.size) {
+      if(i == 0 && j == 0) {
+        circuit.W(i).TopGrad(j) += w11OutputGradient
+      } else {
+        circuit.W(i).TopGrad(j) += outputGradient
       }
     }
     for(i <- 0 until circuit.R.size) {
@@ -61,8 +58,7 @@ object addressing_test {
       circuit.WM.TopGrad(i)(j) += outputGradient
     }
 
-    circuit.Backward()
-    // println(" - - " + memory.TopGrad.mkString(","))
+    circuit.Backward() // Major Computation Here
 
     val memoryTop = unit.makeTensorUnit2(n, m)
     for(i <- 0 until n; j <- 0 until m) {
@@ -338,7 +334,7 @@ object addressing_test {
     val w = new Array[Double](n)
     var sum: Double = 0
     for(i <- 0 until w.size) {
-      w(i) = Math.abs(Math.random)
+      w(i) = 0.1 + 0.01 * i// Math.random
       sum += w(i)
     }
     for(i <- 0 until w.size) {

@@ -27,12 +27,10 @@ class similarityCircuit(
     val uvuu = UV / (Unorm * Unorm)
     val uvvv = UV / (Vnorm * Vnorm)
     val uvg = TopGrad / (Unorm * Vnorm)
-    // println("uvuu " + uvuu + " uvvv " + uvvv + " uvg " + uvg)
     for(i <- 0 until m) {
       h.addKGrad(i, uvg * VVal(index)(i) - uvuu * uvg * h.getKVal(i))
       VGrad(index)(i) += uvg * h.getKVal(i) - uvvv * uvg * VVal(index)(i)
     }
-    // println("~~~ " + VGrad.mkString(","))
   }
 }
 
@@ -79,8 +77,7 @@ object betaSimilarity {
     new betaSimilarity(
       h = h,
       S = s,
-      // Beta is in the range (-Inf, Inf)
-      b = Math.exp(h.getBetaVal())
+      b = Math.exp(h.getBetaVal()) // Beta is in the range (-Inf, Inf)
     )
   }
 }
@@ -91,12 +88,8 @@ class contentAddressing(
 ){
   def Backward(): Unit = {
     var gv: Double = 0
-    for(top <- Top) {
-      gv += top.Grad * top.Val
-    }
-    for(i <- 0 until Top.size) {
-      Units(i).Top.Grad += (Top(i).Grad - gv) * Top(i).Val
-    }
+    for(top <- Top) gv += top.Grad * top.Val
+    for(i <- 0 until Top.size) Units(i).Top.Grad += (Top(i).Grad - gv) * Top(i).Val
   }
 }
 
@@ -109,18 +102,16 @@ object contentAddressing {
     // Increase numerical stability by subtracting all weights by their max,
     // before computing Math.exp().
     var max: Double = Double.MinValue
-    for(u <- s.Units) {
-      max = Math.max(max, u.Top.Val)
-    }
+    for(u <- s.Units) max = Math.max(max, u.Top.Val)
+    
     var sum: Double = 0
     for(i <- 0 until s.Units.size) {
       val w = Math.exp(s.Units(i).Top.Val - max)
       s.Top(i).Val = w
       sum += w
     }
-    for(i <- 0 until s.Top.size) {
-      s.Top(i).Val = s.Top(i).Val / sum
-    }
+    for(i <- 0 until s.Top.size) s.Top(i).Val = s.Top(i).Val / sum
+
     s
   }
 }
@@ -128,8 +119,7 @@ object contentAddressing {
 class gatedWeighting(
   var h: Head = null,
   val WC: contentAddressing,
-  // the weights at time t-1
-  val Wtm1: refocus,
+  val Wtm1: refocus, // the weights at time t-1
   val Top: Array[unit]
 ){
   def GVal: Double = h.getGVal()
@@ -138,18 +128,14 @@ class gatedWeighting(
     val gt = Sigmoid(GVal)
 
     var grad: Double = 0.0
-    for(i <- 0 until Top.size) {
+    for(i <- 0 until Top.size)
       grad += (WC.Top(i).Val - Wtm1.TopVal(i)) * Top(i).Grad
-    }
+
     h.addGGrad(grad * gt * (1 - gt))
 
-    for(i <- 0 until WC.Top.size) {
-      WC.Top(i).Grad += gt * Top(i).Grad
-    }
-
-    for(i <- 0 until Wtm1.TopGrad.size) {
+    for(i <- 0 until WC.Top.size) WC.Top(i).Grad += gt * Top(i).Grad
+    for(i <- 0 until Wtm1.TopGrad.size)
       Wtm1.TopGrad(i) += (1 - gt) * Top(i).Grad
-    }
   }
 }
 
@@ -166,9 +152,8 @@ object gatedWeighting {
       Top = Array.fill[unit](wc.Top.size)(new unit)
     )
     val gt = Sigmoid(h.getGVal())
-    for(i <- 0 until wg.Top.size) {
+    for(i <- 0 until wg.Top.size)
       wg.Top(i).Val = gt * wc.Top(i).Val + (1 - gt) * wtm1.TopVal(i)
-    }
     wg
   }
 }
@@ -182,7 +167,7 @@ class shiftedWeighting(
   def SVal: Double = h.getSVal()
   def SGrad: Double = h.getSGrad()
   def Backward(): Unit = {
-    var grad: Double = 0
+    var grad: Double = 0.0
     val n = WG.Top.size
     for(i <- 0 until Top.size) {
       val imj = (i + Z.toInt) % n
@@ -218,7 +203,7 @@ object shiftedWeighting {
       val imj = (i + sw.Z.toInt) % n
       sw.Top(i).Val = sw.WG.Top(imj).Val * simj + sw.WG.Top((imj + 1) % n).Val * (1 - simj)
       if(sw.Top(i).Val.isNaN || sw.Top(i).Val < 0) {
-        Console.err.println(s"imj: $imj, wg: $sw.WG.Top(imj).Val, simj: $simj, wg+1: $sw.WG.Top((imj + 1) % n).Val")
+        Console.err.println(s"imj: $imj, wg: ${sw.WG.Top(imj).Val}, simj: $simj, wg+1: ${sw.WG.Top((imj + 1) % n).Val}")
         System.exit(1)
       }
     }
@@ -233,21 +218,16 @@ class refocus(
   val TopGrad: Array[Double],
   var g: Double = 0
 ){
-  // println("----" + TopGrad.mkString(","))
   def GammaVal: Double = h.getGammaVal()
   def GammaGrad: Double = h.getGammaGrad()
   def backwardSW() {
     var topGV: Double = 0
-    for(i <- 0 until TopVal.size) {
-      topGV += TopGrad(i) * TopVal(i)
-    }
-    for(i <- 0 until SW.Top.size if SW.Top(i).Val >= machineEpsilon) {
+    for(i <- 0 until TopVal.size) topGV += TopGrad(i) * TopVal(i)
+    for(i <- 0 until SW.Top.size if SW.Top(i).Val >= machineEpsilon)
       SW.Top(i).Grad += (TopGrad(i) - topGV) * g / SW.Top(i).Val * TopVal(i)
-    }
   }
 
   def backwardGamma() {
-    // println("----" + TopGrad.mkString(","))
     val lns = new Array[Double](SW.Top.size)
     var lnexp: Double = 0
     var s: Double = 0
@@ -257,26 +237,17 @@ class refocus(
       lnexp += lns(i) * pow
       s += pow
     }
-    // Console.err.println(" - s " + s)
-    // Console.err.println(" - lnexp " + lnexp)
     val lnexps = lnexp / s
     var grad: Double = 0
-    for(i <- 0 until TopVal.size if SW.Top(i).Val >= machineEpsilon) {
-      // println(" - TopVal " + TopVal(i)) //  <---- Correct
-      // println(" - TopGrad " + TopGrad(i)) //  <---- Error
+    for(i <- 0 until TopVal.size if SW.Top(i).Val >= machineEpsilon)
       grad += TopGrad(i) * (TopVal(i) * (lns(i) - lnexps))
-    }
-    // println(" - grad " + grad)
     grad = grad / (1 + Math.exp(-GammaVal))
     h.addGammaGrad(grad)
   }
 
   def Backward() {
-    // println("----" + TopGrad.mkString(","))
     backwardSW()
-    // println("----" + TopGrad.mkString(","))
     backwardGamma()
-    // println("----" + TopGrad.mkString(","))
   }
 }
 
@@ -294,9 +265,7 @@ object refocus {
       rf.TopVal(i) = Math.pow(sw.Top(i).Val, rf.g)
       sum += rf.TopVal(i)
     }
-    for(i <- 0 until rf.TopVal.size) {
-      rf.TopVal(i) = rf.TopVal(i) / sum
-    }
+    for(i <- 0 until rf.TopVal.size) rf.TopVal(i) = rf.TopVal(i) / sum
     rf
   }
 }
@@ -310,32 +279,14 @@ class memRead(
   def Backward() {
     val n = Memory.N
     val m = Memory.TopVal.size / n
-    // grad.size == m
-    val grad = TopGrad
+    val grad = TopGrad // grad.size == m
     val memVal = Memory.TopVal
     val weightsGrad = W.TopGrad
-    // println(" memory TopVal " + memVal.mkString(","))
-    // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
-    // y = alpha * A * x + beta * y; if t == blas.NoTrans
-    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
-
-    // println("  - memVal " + memVal.mkString(","))
-    // println("  - grad " + grad.mkString(","))
-
-    // Gemv(false, 1, memVal, grad, 1, weightsGrad)
-    for(k <- 0 until m; j <- 0 until n)
-      weightsGrad(j) += memVal(j)(k) * grad(k)
-
-    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
+    Gemv(false, 1, memVal, grad, 1, weightsGrad)
 
     val memGrad = Memory.TopGrad
     val weights = W.TopVal
-    // println(memGrad.mkString(","))
-    // Ger(1, weights, grad, memGrad)
-    for(i <- 0 until m; j <- 0 until n)
-      memGrad(j)(i) += weights(j) * grad(i)
-    // println(memGrad.mkString(","))
-    // println(" refocus TopGrad " + W.TopGrad.mkString(","))
+    Ger(1, weights, grad, memGrad)
   }
 }
 
@@ -352,9 +303,7 @@ object memRead {
     val weights = w.TopVal
     val mem = memory.TopVal
     val top = r.TopVal
-    // Gemv(true, 1, mem, weights, 1, top)
-    for(i <- 0 until m; j <- 0 until n)
-      top(i) += mem(j)(i) * weights(j)
+    Gemv(true, 1, mem, weights, 1, top)
     r
   }
 }
@@ -381,14 +330,11 @@ class writtenMemory(
         out(i)(j) = erasures(i)(j) / mwe
       } else {
         var mtilt = Mtm1.TopVal(i)(j)
-        for(q <- 0 until Ws.size if q != i * m + j) {
+        for(q <- 0 until Ws.size if q != i * m + j)
           mtilt *= (1 - Ws(q).TopVal(i) * erase(q)(j))
-        }
-        // print(mtilt + ",")
         out(i)(j) = mtilt
       }
     }
-    // println("--------- ----")
   }
 
   def backwardWErase() {
@@ -402,45 +348,24 @@ class writtenMemory(
       val eraseV = erase(i)
       val addV = add(i)
       val weightsVal = Ws(i).TopVal
-      for(j <- 0 until n; k <- 0 until m)
-        mgrad(j)(k) = 0
-      // Ger(1, weightsVal, eraseV, mgrad)
-      for(j <- 0 until n; k <- 0 until m)
-        mgrad(j)(k) += weightsVal(j) * eraseV(k)
-      // println("-erasure- " + erasures.mkString(","))
-      // println("-mgrad 0- " + mgrad.mkString(","))
-      div1MWE(mgrad) // <---- FIXED
-      // println("-mgrad 1- " + mgrad.mkString(","))
+      for(j <- 0 until n; k <- 0 until m) mgrad(j)(k) = 0
+      Ger(1, weightsVal, eraseV, mgrad)
 
-      for(j <- 0 until n; k <- 0 until m)
-        mgrad(j)(k) *= TopGrad(j)(k)
+      div1MWE(mgrad) // <---- FIXED
+
+      for(j <- 0 until n; k <- 0 until m) mgrad(j)(k) *= TopGrad(j)(k)
 
       val weightsV = Ws(i).TopGrad
 
-      // println("-#- " + weightsVal.mkString(","))
-      // println("-!2- " + mgrad.mkString(","))
-      // println("-@- " + eraseV.mkString(","))
-      // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
-      // y = alpha * A * x + beta * y; if t == blas.NoTrans
-      // println("-~- " + weightsV.mkString(","))
-      // Gemv(false, -1, mgrad, eraseV, 1, weightsV)
-      for(k <- 0 until m; j <- 0 until n)
-        weightsV(j) -= mgrad(j)(k) * eraseV(k)
-      // println("-~- " + weightsV.mkString(","))
-      // Gemv(false, 1, TopGrad, addV, 1, weightsV)
-      for(k <- 0 until m; j <- 0 until n)
-        weightsV(j) += TopGrad(j)(k) * addV(k)
-      // println("-~- " + weightsV.mkString(","))
-      val head = Heads(i)
-      for(j <- 0 until hEraseGrad.size)
-        hEraseGrad(j) = 0
-      // Gemv(true, -1, mgrad, weightsVal, 1, hEraseGrad)
-      for(k <- 0 until m; j <- 0 until n)
-        hEraseGrad(k) -= mgrad(j)(k) * weightsVal(j)
+      Gemv(false, -1, mgrad, eraseV, 1, weightsV)
+      Gemv(false, 1, TopGrad, addV, 1, weightsV)
 
-      for(j <- 0 until head.M) {
+      val head = Heads(i)
+      for(j <- 0 until hEraseGrad.size) hEraseGrad(j) = 0
+      Gemv(true, -1, mgrad, weightsVal, 1, hEraseGrad)
+
+      for(j <- 0 until head.M)
         head.addEraseGrad(j, hEraseGrad(j) * eraseV(j) * (1 - eraseV(j)))
-      }
     }
   }
 
@@ -454,9 +379,7 @@ class writtenMemory(
       val head = Heads(k)
       for(i <- 0 until head.M) {
         grad = 0
-        for(j <- 0 until n) {
-          grad += TopGrad(j)(i) * ws.TopVal(j)
-        }
+        for(j <- 0 until n) grad += TopGrad(j)(i) * ws.TopVal(j)
         val a = addV(i)
         head.addAddGrad(i, grad * a * (1 - a))
       }
@@ -469,25 +392,24 @@ class writtenMemory(
     var grad: Double = 0
     for(i <- 0 until n; j <- 0 until m) {
       grad = 1
-      for(q <- 0 until Ws.size) {
-        grad *= (1 - Ws(q).TopVal(i) * erase(q)(j))
-      }
+      for(q <- 0 until Ws.size) grad *= (1 - Ws(q).TopVal(i) * erase(q)(j))
       Mtm1.TopGrad(i)(j) += grad * TopGrad(i)(j)
     }
   }
 
   def Backward() {
-    // println(Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     backwardWErase()
-    // println(Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     backwardAdd()
-    // println(Ws.map(_.TopGrad.mkString(",")).mkString(" ;; "))
     backwardMtm1()
   }
 }
 
 object writtenMemory {
-  def newWrittenMemory(ws: Array[refocus], heads: Array[Head], mtm1: writtenMemory): writtenMemory = {
+  def newWrittenMemory(
+    ws: Array[refocus],
+    heads: Array[Head],
+    mtm1: writtenMemory
+  ): writtenMemory = {
     val n = mtm1.N
     val m = mtm1.TopVal.head.size
     val mtn = m * n
@@ -516,26 +438,15 @@ object writtenMemory {
 
     for(i <- 0 until n; j <- 0 until m) wm.erasures(i)(j) = mtm1.TopVal(i)(j)
 
-    // println("-$0- " + wm.erasures.mkString(","))
-
     for(k <- 0 until m) {
       // val we = Array.fill[Double](mtn)(1.0)
       val we = Array.ofDim[Double](n, m)
-      for(i <- 0 until n; j <- 0 until m)
-        we(i)(j) = 1.0
+      for(i <- 0 until n; j <- 0 until m) we(i)(j) = 1.0
       val weights = wm.Ws(k).TopVal
       val erase = wm.erase(k)
-      // Ger(-1.0, weights, erase, we)
-      for(i <- 0 until n; j <- 0 until m)
-        we(i)(j) -= weights(i) * erase(j)
-      // println("+--- " + weights.mkString(","))
-      // println("-+-- " + erase.mkString(","))
-      // println("--+- " + we.mkString(","))
-      for(i <- 0 until n; j <- 0 until m)
-        wm.erasures(i)(j) *= we(i)(j)
+      Ger(-1.0, weights, erase, we)
+      for(i <- 0 until n; j <- 0 until m) wm.erasures(i)(j) *= we(i)(j)
     }
-
-    // println("-$1- " + wm.erasures.mkString(","))
 
     for(i <- 0 until n; j <- 0 until m) wm.TopVal(i)(j) = wm.erasures(i)(j)
 
@@ -543,9 +454,7 @@ object writtenMemory {
     for(k <- 0 until wm.Ws.size) {
       val weights = wm.Ws(k).TopVal
       val add = wm.add(k)
-      // Ger(1, weights, add, topG)
-      for(i <- 0 until m; j <- 0 until n)
-        topG(j)(i) += weights(j) * add(i)
+      Ger(1, weights, add, topG)
     }
 
     wm
@@ -586,8 +495,6 @@ class memOp(
 
 object memOp {
   def newMemOp(heads: Array[Head], mtm1: writtenMemory): memOp = {
-    // println("mtm1 TV " + mtm1.TopVal.mkString(","))
-
     val circuit = new memOp(
       R = new Array[memRead](heads.size)
     )

@@ -78,10 +78,12 @@ class Controller(
     weightsGradVec.take(mtm1OffsetVec()).drop(wtm1OffsetVec())
 
   // def Mtm1BiasVal(): Array[Double] = weightsVal.drop(mtm1Offset())
-  def Mtm1BiasValVec(): Array[Array[Double]] = weightsValVec.drop(mtm1OffsetVec())
+  def Mtm1BiasValVec(): Array[Array[Double]] =
+    weightsValVec.drop(mtm1OffsetVec())
 
   // def Mtm1BiasGrad(): Array[Double] = weightsGrad.drop(mtm1Offset())
-  def Mtm1BiasGradVec(): Array[Array[Double]] = weightsGradVec.drop(mtm1OffsetVec())
+  def Mtm1BiasGradVec(): Array[Array[Double]] =
+    weightsGradVec.drop(mtm1OffsetVec())
 
   def Heads(): Array[Head] = heads
 
@@ -165,9 +167,8 @@ class Controller(
 
     // h1Val = Vector{Inc: 1, Data: H1Val[0:h1Size]}
     // h1Grad = Vector{Inc: 1, Data: H1Grad[0:h1Size]}
-    for(i <- 0 until h1Size) {
+    for(i <- 0 until h1Size)
       h1Grad(i) *= h1Val(i) * (1 - h1Val(i))
-    }
 
     val u = new Array[Double](wh1Cols())
     // Gemv(blas.Trans, 1, wh1Val(), h1Grad, 1, u)
@@ -177,14 +178,12 @@ class Controller(
     for(i <- 0 until wh1Cols(); j <- 0 until h1Size) // limit to h1Size
       wh1GradVec()(j)(i) += h1Grad(j) * ReadsXVal(i)
 
-    for(i <- 0 until Reads.size; j <- 0 until Reads(i).TopGrad.size) {
+    for(i <- 0 until Reads.size; j <- 0 until Reads(i).TopGrad.size)
       Reads(i).TopGrad(j) = u(i * memoryM + j)
-    }
   }
 
   // def WeightsVal(): Array[Double] = weightsVal
   // def WeightsGrad(): Array[Double] = weightsGrad
-
   def WeightsValVec(): Array[Array[Double]] = weightsValVec
   def WeightsGradVec(): Array[Array[Double]] = weightsGradVec
 

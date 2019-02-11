@@ -94,9 +94,7 @@ object Head {
 class NTM(val Controller: Controller, var memOp: memOp = null) {
   def backward(): Unit = {
     memOp.Backward()
-    // println(" - c20 - " + Controller.WeightsGrad().mkString(","))
     Controller.Backward() // <--- ERROR
-    // println(" - c21 - " + Controller.WeightsGrad().mkString(","))
   }
 }
 
@@ -129,15 +127,12 @@ object NTM {
       machines(t) = NewNTM(machines(t-1), in(t))
     }
 
-    // println(" - cm 0 - " + weights.mkString(","))
     for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
       out.Model(t, m.Controller.YValVec(), m.Controller.YGradVec())
       m.backward() //  <---- ERROR HERE
-      // println(" - cm 01 - " + weights.mkString(","))
     }
 
-    // println(" - cm 1 - " + weights.mkString(","))
     // Compute gradients for the bias values of the initial memory and weights.
     for(i <- 0 until reads.size) {
       reads(i).Backward()
@@ -147,13 +142,11 @@ object NTM {
       cas(i).Backward()
     }
 
-    // println(" - cm 2 - " + weights.mkString(","))
     // Copy gradients to the controller.
     val cwtm1 = c.Wtm1BiasGradVec()
     for(i <- 0 until cas.size; j <- 0 until cas(i).Units.size) {
       cwtm1(i)(j) = cas(i).Units(j).Top.Grad
     }
-    // println(" - cm 3 - " + weights.mkString(","))
     machines
   }
 
