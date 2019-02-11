@@ -186,22 +186,20 @@ object addressing_test {
   }
 
   def checkMemory(t: T, heads: Array[Head], memory: Array[Array[unit]], ax: Double) {
-    for(i <- 0 until memory.size) {
-      for(j <- 0 until memory(i).size) {
-        val x = memory(i)(j).Val
-        val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
-        val xph = x + h
-        memory(i)(j).Val = xph
-        val dx = xph - x
-        val axph = addressing(heads, memory)
-        val grad = (axph - ax) / dx
-        memory(i)(j).Val = x
+    for(i <- 0 until memory.size; j <- 0 until memory(i).size) {
+      val x = memory(i)(j).Val
+      val h = machineEpsilonSqrt * Math.max(Math.abs(x), 1)
+      val xph = x + h
+      memory(i)(j).Val = xph
+      val dx = xph - x
+      val axph = addressing(heads, memory)
+      val grad = (axph - ax) / dx
+      memory(i)(j).Val = x
 
-        if(grad.isNaN || Math.abs(grad - memory(i)(j).Grad) > 1e-5) {
-          t.Fatalf(s"[ADDRESS] wrong memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
-        } else {
-          t.Logf(s"[ADDRESS] OK memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
-        }
+      if(grad.isNaN || Math.abs(grad - memory(i)(j).Grad) > 1e-5) {
+        t.Fatalf(s"[ADDRESS] wrong memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
+      } else {
+        t.Logf(s"[ADDRESS] OK memory[$i][$j] gradient expected $grad, got ${memory(i)(j).Grad}")
       }
     }
   }

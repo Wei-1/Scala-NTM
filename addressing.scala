@@ -278,12 +278,15 @@ class memRead(
 ){
   def Backward() {
     val n = Memory.N
-    val m = Memory.TopVal.size / n
+    val m = Memory.TopVal.head.size
     val grad = TopGrad // grad.size == m
     val memVal = Memory.TopVal
     val weightsGrad = W.TopGrad
+    // println("grad " + grad.mkString(","))
+    // println("memVal " + memVal.map(_.mkString(",")).mkString(";"))
+    // println("weightsGrad " + weightsGrad.mkString(","))
     Gemv(false, 1, memVal, grad, 1, weightsGrad)
-
+    // println("weightsGrad " + weightsGrad.mkString(","))
     val memGrad = Memory.TopGrad
     val weights = W.TopVal
     Ger(1, weights, grad, memGrad)
@@ -293,7 +296,7 @@ class memRead(
 object memRead {
   def newMemRead(w: refocus, memory: writtenMemory): memRead = {
     val n = memory.N
-    val m = memory.TopVal.size / n
+    val m = memory.TopVal.head.size
     val r = new memRead(
       W = w,
       Memory = memory,
@@ -388,19 +391,22 @@ class writtenMemory(
 
   def backwardMtm1() {
     val n = N
-    val m = TopVal.head.size / n
+    val m = TopVal.head.size
     var grad: Double = 0
     for(i <- 0 until n; j <- 0 until m) {
       grad = 1
       for(q <- 0 until Ws.size) grad *= (1 - Ws(q).TopVal(i) * erase(q)(j))
+      println("grad " + grad)
       Mtm1.TopGrad(i)(j) += grad * TopGrad(i)(j)
     }
   }
 
   def Backward() {
     backwardWErase()
+    // println(" -1.1- " + Mtm1.TopGrad.map(_.mkString(",")).mkString(";"))
     backwardAdd()
-    backwardMtm1()
+    // println(" -1.2- " + Mtm1.TopGrad.map(_.mkString(",")).mkString(";"))
+    backwardMtm1() // <-- ERROR HERE -> FIXED
   }
 }
 
@@ -467,12 +473,12 @@ class memOp(
   var WM: writtenMemory = null
 ) {
   def Backward() {
-    // println(" -0- " + WM.Mtm1.TopGrad.mkString(","))
+    // println(" -0- " + WM.Mtm1.TopGrad.map(_.mkString(",")).mkString(";"))
     // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     R.foreach(r => r.Backward()) //  <---- ERROR HERE -> FIXED
-    // println(" -1- " + WM.Mtm1.TopGrad.mkString(","))
+    // println(" -1- " + WM.Mtm1.TopGrad.map(_.mkString(",")).mkString(";"))
     WM.Backward() //  <---- ERROR HERE -> FIXED
-    // println(" -2- " + WM.Mtm1.TopGrad.mkString(","))
+    // println(" -2- " + WM.Mtm1.TopGrad.map(_.mkString(",")).mkString(";"))
     // println(WM.Ws.map(_.TopGrad.mkString(",")).mkString(" ; "))
     WM.Ws.foreach { rf =>
       // println(" - CHECK gamma[$k] " + WM.Heads.map(_.getGammaGrad()).mkString(","))
@@ -489,7 +495,7 @@ class memOp(
       }
       // println(" -331- " + WM.Mtm1.TopGrad.mkString(","))
     }
-    // println(" -3- " + WM.Mtm1.TopGrad.mkString(","))
+    // println(" -3- " + WM.Mtm1.TopGrad.map(_.mkString(",")).mkString(","))
   }
 }
 
