@@ -12,7 +12,6 @@ object addressing_test {
   val w11OutputGradient = 0.987
 
   def TestCircuit(t: T) {
-    val t = new T
 
     val n = 3
     val m = 2
@@ -22,7 +21,7 @@ object addressing_test {
       TopGrad = Array.ofDim[Double](n, m)
     )
     for(i <- 0 until n; j <- 0 until m) {
-      memory.TopVal(i)(j) = 0.1 + 0.001 * i + 0.01 * j// Math.random
+      memory.TopVal(i)(j) = Math.random
     }
 
     val hul = Head.headUnitsLen(m)
@@ -33,7 +32,7 @@ object addressing_test {
       heads(i).grads = new Array[Double](hul)
       heads(i).Wtm1 = randomRefocus(n)
       for(j <- 0 until hul) {
-        heads(i).vals(j) = 0.1 + 0.001 * i + 0.01 * j// Math.random
+        heads(i).vals(j) = Math.random
       }
     }
     // We want to check the case where Beta > 0 and Gamma > 1.
@@ -218,7 +217,7 @@ object addressing_test {
         hd.setKVal(i, x)
 
         if(grad.isNaN || Math.abs(grad - hd.getKGrad(i)) > 1e-5) {
-          t.Fatalf(s"[ADDRESS] wrong beta[$i] gradient expected $grad, got ${hd.getKGrad(i)}")
+          t.Fatalf(s"[ADDRESS] wrong beta[$k][$i] gradient expected $grad, got ${hd.getKGrad(i)}")
         } else {
           t.Logf(s"[ADDRESS] OK K[$k][$i] gradient expected $grad, got ${hd.getKGrad(i)}")
         }
@@ -239,7 +238,7 @@ object addressing_test {
       hd.setBetaVal(x)
 
       if(grad.isNaN || Math.abs(grad - hd.getBetaGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong beta gradient expected $grad, got ${hd.getBetaGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong beta[$k] gradient expected $grad, got ${hd.getBetaGrad()}")
       } else {
         t.Logf(s"[ADDRESS] OK beta[$k] gradient expected $grad, got ${hd.getBetaGrad()}")
       }
@@ -260,7 +259,7 @@ object addressing_test {
         hd.Wtm1.TopVal(i) = x
 
         if(grad.isNaN || Math.abs(grad - hd.Wtm1.TopGrad(i)) > 1e-5) {
-          t.Fatalf(s"[ADDRESS] wrong wtm1[$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
+          t.Fatalf(s"[ADDRESS] wrong wtm1[$k][$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
         } else {
           t.Logf(s"[ADDRESS] OK wtm1[$k][$i] gradient expected $grad, got ${hd.Wtm1.TopGrad(i)}")
         }
@@ -281,7 +280,7 @@ object addressing_test {
       hd.setGVal(x)
 
       if(grad.isNaN || Math.abs(grad - hd.getGGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong G gradient expected $grad, got ${hd.getGGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong G[$k] gradient expected $grad, got ${hd.getGGrad()}")
       } else {
         t.Logf(s"[ADDRESS] OK G[$k] agradient expected $grad, got ${hd.getGGrad()}")
       }
@@ -301,7 +300,7 @@ object addressing_test {
       hd.setSVal(x)
 
       if(grad.isNaN || Math.abs(grad - hd.getSGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong S gradient expected $grad, got ${hd.getSGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong S[$k] gradient expected $grad, got ${hd.getSGrad()}")
       } else {
         t.Logf(s"[ADDRESS] OK S[$k] agradient expected $grad, got ${hd.getSGrad()}")
       }
@@ -321,7 +320,7 @@ object addressing_test {
       hd.setGammaVal(x)
 
       if(grad.isNaN || Math.abs(grad - hd.getGammaGrad()) > 1e-5) {
-        t.Fatalf(s"[ADDRESS] wrong gamma gradient expected $grad, got ${hd.getGammaGrad()}")
+        t.Fatalf(s"[ADDRESS] wrong gamma[$k] gradient expected $grad, got ${hd.getGammaGrad()}")
       } else {
         t.Logf(s"[ADDRESS] OK gamma[$k] gradient expected $grad, got ${hd.getGammaGrad()}")
       }
@@ -332,7 +331,7 @@ object addressing_test {
     val w = new Array[Double](n)
     var sum: Double = 0
     for(i <- 0 until w.size) {
-      w(i) = 0.1 + 0.01 * i// Math.random
+      w(i) = Math.random
       sum += w(i)
     }
     for(i <- 0 until w.size) {

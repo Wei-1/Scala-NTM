@@ -13,20 +13,21 @@ However, instead of focusing on adapting the Scala style.
 
 I will start adding test cases from the paper first.
 
-## TODO:
+## TESTS:
 
-- [ ] Unit Tests (WIP)
+- [x] Unit Tests
 - [ ] Copy Task
 - [ ] Repeat Copy
 - [ ] nGram
 
 ## STATUS:
 
-Currently,
-without proper tests, one can only check the code with:
+Currently, one can only check the code with:
 
 ```
 sbt run
 ```
 
-Well... at least there is no error from the compiler.
+Unit tests are successful,
+and had done a 1 to 1 value comparison with fumin's project.
+(tested with the same random seed)

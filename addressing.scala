@@ -4,22 +4,24 @@ import math._
 
 class similarityCircuit(
   val h: Head = null,
-  // val UVal: Array[Double],
-  // val UGrad: Array[Double],
-  val VVal: Array[Array[Double]],
-  val VGrad: Array[Array[Double]],
-  val index: Int,
+  val VVal: Array[Double],
+  val VGrad: Array[Double],
   val m: Int
 ){
+  // println(h.vals.mkString(" "))
   var UV: Double = (0 until m).map { i =>
-    h.getKVal(i) * VVal(index)(i)
+    // println(h.getKVal(i) + " -h.getKVal(i) " + VVal(i) + " -VVal(i)")
+    h.getKVal(i) * VVal(i)
   }.sum
+  // println(UV + " -UV")
   var Unorm: Double = Math.sqrt(
     (0 until m).map(i => Math.pow(h.getKVal(i), 2)).sum
   )
+  // println(Unorm + " -Unorm")
   var Vnorm: Double = Math.sqrt(
-    (0 until m).map(i => Math.pow(VVal(index)(i), 2)).sum
+    (0 until m).map(i => Math.pow(VVal(i), 2)).sum
   )
+  // println(Vnorm + " -Vnorm")
   var TopVal: Double = UV / (Unorm * Vnorm)
   var TopGrad: Double = 0.0
 
@@ -28,8 +30,8 @@ class similarityCircuit(
     val uvvv = UV / (Vnorm * Vnorm)
     val uvg = TopGrad / (Unorm * Vnorm)
     for(i <- 0 until m) {
-      h.addKGrad(i, uvg * VVal(index)(i) - uvuu * uvg * h.getKVal(i))
-      VGrad(index)(i) += uvg * h.getKVal(i) - uvvv * uvg * VVal(index)(i)
+      h.addKGrad(i, uvg * VVal(i) - uvuu * uvg * h.getKVal(i))
+      VGrad(i) += uvg * h.getKVal(i) - uvvv * uvg * VVal(i)
     }
   }
 }
@@ -37,18 +39,14 @@ class similarityCircuit(
 object similarityCircuit {
   def newSimilarityCircuit(
     h: Head,
-    vVal: Array[Array[Double]],
-    vGrad: Array[Array[Double]],
-    index: Int,
+    vVal: Array[Double],
+    vGrad: Array[Double],
     m: Int
   ): similarityCircuit = {
     new similarityCircuit(
       h = h,
-      // UVal = uVal,
-      // UGrad = uGrad,
       VVal = vVal,
       VGrad = vGrad,
-      index = index,
       m = m
     )
   }
@@ -107,6 +105,7 @@ object contentAddressing {
     var sum: Double = 0
     for(i <- 0 until s.Units.size) {
       val w = Math.exp(s.Units(i).Top.Val - max)
+      // println(s.Units(i).Top.Val + " ------ " + max + " ------ " + w)
       s.Top(i).Val = w
       sum += w
     }
@@ -278,8 +277,7 @@ class memRead(
 ){
   def Backward() {
     val n = Memory.N
-    val m = Memory.TopVal.head.size
-    val grad = TopGrad // grad.size == m
+    val grad = TopGrad // grad.size == Memory.TopVal.last.size
     val memVal = Memory.TopVal
     val weightsGrad = W.TopGrad
     // println("grad " + grad.mkString(","))
@@ -296,7 +294,7 @@ class memRead(
 object memRead {
   def newMemRead(w: refocus, memory: writtenMemory): memRead = {
     val n = memory.N
-    val m = memory.TopVal.head.size
+    val m = memory.TopVal.last.size
     val r = new memRead(
       W = w,
       Memory = memory,
@@ -326,7 +324,7 @@ class writtenMemory(
   var erasures: Array[Array[Double]] = null
 ){
   def div1MWE(out: Array[Array[Double]]) {
-    val m = TopVal.head.size
+    val m = TopVal.last.size
     for(i <- 0 until erasures.size; j <- 0 until erasures(i).size) {
       val mwe = 1 - out(i)(j)
       if(mwe.abs > 1e-6) {
@@ -342,7 +340,7 @@ class writtenMemory(
 
   def backwardWErase() {
     val n = N
-    val m = TopVal.head.size
+    val m = TopVal.last.size
 
     val mgrad = Array.ofDim[Double](n, m)
     val hEraseGrad = new Array[Double](m)
@@ -374,7 +372,6 @@ class writtenMemory(
 
   def backwardAdd() {
     val n = N
-    val m = TopVal.head.size
     var grad: Double = 0
     for(k <- 0 until Heads.size) {
       val addV = add(k)
@@ -391,12 +388,12 @@ class writtenMemory(
 
   def backwardMtm1() {
     val n = N
-    val m = TopVal.head.size
+    val m = TopVal.last.size
     var grad: Double = 0
     for(i <- 0 until n; j <- 0 until m) {
       grad = 1
       for(q <- 0 until Ws.size) grad *= (1 - Ws(q).TopVal(i) * erase(q)(j))
-      println("grad " + grad)
+      // println("grad " + grad)
       Mtm1.TopGrad(i)(j) += grad * TopGrad(i)(j)
     }
   }
@@ -510,8 +507,10 @@ object memOp {
       val ss = new Array[betaSimilarity](mtm1.N)
       for(i <- 0 until mtm1.N) {
         val m = mtm1.TopVal.head.size
-        val s = similarityCircuit.newSimilarityCircuit(h, mtm1.TopVal, mtm1.TopGrad, i, m)
+        val s = similarityCircuit.newSimilarityCircuit(h, mtm1.TopVal(i), mtm1.TopGrad(i), m)
+        // println(s.TopVal + " -similarityCircuit")
         ss(i) = betaSimilarity.newBetaSimilarity(h, s)
+        // println(ss(i).Top.Val + " -betaSimilarity")
       }
       val wc = contentAddressing.newContentAddressing(ss)
       val wg = gatedWeighting.newGatedWeighting(h, wc, h.Wtm1)

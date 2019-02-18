@@ -94,7 +94,7 @@ object Head {
 class NTM(val Controller: Controller, var memOp: memOp = null) {
   def backward(): Unit = {
     memOp.Backward()
-    Controller.Backward() // <--- ERROR
+    Controller.Backward() // <--- ERROR -> FIXED
   }
 }
 
@@ -102,9 +102,9 @@ object NTM {
   // NewNTM creates a new NTM.
   def NewNTM(old: NTM, x: Array[Double]): NTM = {
     val m = new NTM(Controller = old.Controller.Forward(old.memOp.R, x))
-    for(i <- 0 until m.Controller.Heads().size) {
+    for(i <- 0 until m.Controller.Heads().size)
       m.Controller.Heads()(i).Wtm1 = old.memOp.W(i)
-    }
+    // for(i <- m.Controller.Heads()) println(i.vals.mkString(" "))
     m.memOp = memOp.newMemOp(m.Controller.Heads(), old.memOp.WM)
     m
   }
@@ -113,40 +113,35 @@ object NTM {
   // given ground truth input and output values.
   def ForwardBackward(c: Controller, in: Array[Array[Double]], out: DensityModel): Array[NTM] = {
     val weights = c.WeightsGradVec()
-    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size)
       weights(i)(j) = 0
-    }
 
     // Set the empty NTM's memory and head weights to their bias values.
     val (empty, reads, cas) = makeEmptyNTM(c)
     val machines = new Array[NTM](in.size)
 
     // Backpropagation through time.
-    machines(0) = NewNTM(empty, in(0))
-    for(t <- 1 until in.size) {
-      machines(t) = NewNTM(machines(t-1), in(t))
-    }
+    machines(0) = NewNTM(empty, in(0)) // <--- ERROR HERE -> FIXED
+    for(t <- 1 until in.size) machines(t) = NewNTM(machines(t-1), in(t))
 
     for(t <- in.size - 1 to 0 by -1) {
       val m = machines(t)
       out.Model(t, m.Controller.YValVec(), m.Controller.YGradVec())
-      m.backward() //  <---- ERROR HERE
+      m.backward()
     }
 
     // Compute gradients for the bias values of the initial memory and weights.
     for(i <- 0 until reads.size) {
       reads(i).Backward()
-      for(j <- 0 until reads(i).W.TopGrad.size) {
+      for(j <- 0 until reads(i).W.TopGrad.size)
         cas(i).Top(j).Grad += reads(i).W.TopGrad(j)
-      }
       cas(i).Backward()
     }
 
     // Copy gradients to the controller.
     val cwtm1 = c.Wtm1BiasGradVec()
-    for(i <- 0 until cas.size; j <- 0 until cas(i).Units.size) {
+    for(i <- 0 until cas.size; j <- 0 until cas(i).Units.size)
       cwtm1(i)(j) = cas(i).Units(j).Top.Grad
-    }
     machines
   }
 
@@ -159,13 +154,14 @@ object NTM {
 
   def makeEmptyNTM(c: Controller): (NTM, Array[memRead], Array[contentAddressing]) = {
     val cwtm1 = c.Wtm1BiasValVec()
+    // println("cwtm1 " + cwtm1.map(_.mkString(",")).mkString(" ")) // <-- CORRECT
+    // println("Mtm1BiasVal " + c.Mtm1BiasValVec().map(_.mkString(",")).mkString(" "))
+    // println("Mtm1BiasGrad " + c.Mtm1BiasGradVec().map(_.mkString(",")).mkString(" "))
     val unws = new Array[Array[betaSimilarity]](c.NumHeads())
     for(i <- 0 until unws.size) {
       unws(i) = new Array[betaSimilarity](c.MemoryN())
-      for(j <- 0 until unws(i).size) {
-        val v = cwtm1(i)(j)
-        unws(i)(j) = new betaSimilarity(Top = new unit(Val = v))
-      }
+      for(j <- 0 until c.MemoryN())
+        unws(i)(j) = new betaSimilarity(Top = new unit(Val = cwtm1(i)(j)))
     }
 
     val mtm1 = new writtenMemory(
@@ -183,12 +179,11 @@ object NTM {
         TopVal = new Array[Double](c.MemoryN()),
         TopGrad = new Array[Double](c.MemoryN())
       )
-      for(j <- 0 until wtm1s(i).TopVal.size) {
+      for(j <- 0 until wtm1s(i).TopVal.size)
         wtm1s(i).TopVal(j) = cas(i).Top(j).Val
-      }
       reads(i) = memRead.newMemRead(wtm1s(i), mtm1)
     }
-
+    // reads.foreach(r => println("read " + r.TopVal.mkString(" "))) // <--  CORRECT
     val empty = new NTM(
       Controller = c,
       memOp = new memOp(W = wtm1s, R = reads, WM = mtm1)
@@ -200,9 +195,7 @@ object NTM {
   // Predictions returns the predictions of a NTM across time.
   def Predictions(machines: Array[NTM]): Array[Array[Double]] = {
     val pdts = new Array[Array[Double]](machines.size)
-    for(t <- 0 until pdts.size) {
-      pdts(t) = machines(t).Controller.YValVec()
-    }
+    for(t <- 0 until pdts.size) pdts(t) = machines(t).Controller.YValVec()
     pdts
   }
 
@@ -215,9 +208,8 @@ object NTM {
       hws(i) = new Array[Array[Double]](machines.size)
       for(t <- 0 until machines.size) {
         hws(i)(t) = new Array[Double](machines(t).memOp.W(i).TopVal.size)
-        for(j <- 0 until machines(t).memOp.W(i).TopVal.size) {
+        for(j <- 0 until machines(t).memOp.W(i).TopVal.size)
           hws(i)(t)(j) = machines(t).memOp.W(i).TopVal(j)
-        }
       }
     }
     hws
@@ -323,12 +315,10 @@ class LogisticModel(
   // Loss returns the cross entropy loss.
   override def Loss(output: Array[Array[Double]]): Double = {
     var l: Double = 0
-    for(t <- 0 until output.size) {
-      for(i <- 0 until output(t).size) {
-        val p = output(t)(i)
-        val y = Y(t)(i)
-        l += y * Math.log(p) + (1 - y) * Math.log(1 - p)
-      }
+    for(t <- 0 until output.size; i <- 0 until output(t).size) {
+      val p = output(t)(i)
+      val y = Y(t)(i)
+      l += y * Math.log(p) + (1 - y) * Math.log(1 - p)
     }
     -l
   }
@@ -358,9 +348,7 @@ class MultinomialModel(
 
   override def Loss(output: Array[Array[Double]]): Double = {
     var l: Double = 0
-    for(t <- 0 until output.size) {
-      l += Math.log(output(t)(Y(t)))
-    }
+    for(t <- 0 until output.size) l += Math.log(output(t)(Y(t)))
     -l
   }
 }

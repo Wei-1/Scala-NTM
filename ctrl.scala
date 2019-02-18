@@ -59,7 +59,7 @@ class Controller(
   // def wy(w: Array[Double]): Array[Array[Double]] =
   //   w.take(wtm1Offset()).drop(wyOffset()).grouped(h1Size + 1).toArray
   def wyVec(w: Array[Array[Double]]): Array[Array[Array[Double]]] =
-    w.take(wtm1OffsetVec()).drop(wyOffsetVec()).grouped(wyRowsVec()).toArray
+    w.drop(wyOffsetVec()).take(wyRowsVec() * (h1Size + 1)).grouped(wyRowsVec()).toArray
 
   // def wyVal(): Array[Array[Double]] = wy(weightsVal)
   def wyValVec(): Array[Array[Array[Double]]] = wyVec(weightsValVec)
@@ -70,12 +70,12 @@ class Controller(
   // def Wtm1BiasVal(): Array[Double] =
   //   weightsVal.take(mtm1Offset()).drop(wtm1Offset())
   def Wtm1BiasValVec(): Array[Array[Double]] =
-    weightsValVec.take(mtm1OffsetVec()).drop(wtm1OffsetVec())
+    weightsValVec.drop(wtm1OffsetVec()).take(numHeads)
 
   // def Wtm1BiasGrad(): Array[Double] =
   //   weightsGrad.take(mtm1Offset()).drop(wtm1Offset())
   def Wtm1BiasGradVec(): Array[Array[Double]] =
-    weightsGradVec.take(mtm1OffsetVec()).drop(wtm1OffsetVec())
+    weightsGradVec.drop(wtm1OffsetVec()).take(numHeads)
 
   // def Mtm1BiasVal(): Array[Double] = weightsVal.drop(mtm1Offset())
   def Mtm1BiasValVec(): Array[Array[Double]] =
@@ -94,6 +94,7 @@ class Controller(
   def YGradVec(): Array[Double] = outGradVec.head
 
   def Forward(reads: Array[memRead], x: Array[Double]): Controller = {
+    // reads.foreach(r => println("read " + r.TopVal.mkString(" ")))
     val c = new Controller(
       // weightsVal = weightsVal,
       weightsValVec = weightsValVec,
@@ -118,13 +119,12 @@ class Controller(
     )
 
     val ud = new Array[Double](c.wh1Cols())
-    for(i <- 0 until reads.size) {
-      for(j <- 0 until reads(i).TopVal.size)
+    for(i <- 0 until reads.size; j <- 0 until reads(i).TopVal.size)
         ud(i * c.memoryM + j) = reads(i).TopVal(j)
-    }
     for(j <- 0 until c.X.size)
       ud(c.numHeads * c.memoryM + j) = c.X(j)
     ud(c.numHeads * c.memoryM + c.xSize) = 1
+    // println(ud.mkString(" "))
     c.ReadsXVal = ud
 
     val h1 = c.H1Val
@@ -136,9 +136,9 @@ class Controller(
     h1(c.h1Size) = 1
 
     // Gemv(blas.NoTrans, 1, c.wyVal(), h1, 1, c.outVal)
-    for(i <- 0 until c.outValVec.size; j <- 0 until c.wyRowsVec();
-      k <- 0 until c.outValVec.head.size) // special Gemv handler
-      c.outValVec(i)(k) += c.wyValVec()(j)(i)(k) * h1(j)
+    for(i <- 0 until c.outValVec.size; j <- 0 until c.outValVec(i).size;
+      k <- 0 until h1.size) // special Gemv handler
+      c.outValVec(i)(j) += c.wyValVec()(k)(i)(j) * h1(k)
 
     val hul = Head.headUnitsLen(c.memoryM)
     for(i <- 0 until c.heads.size) {
@@ -187,7 +187,7 @@ class Controller(
   def WeightsValVec(): Array[Array[Double]] = weightsValVec
   def WeightsGradVec(): Array[Array[Double]] = weightsGradVec
 
-  def WeightsDesc(i: Int): String = i.toString
+  def WeightsDesc(i: Int, j: Int): String = s"[$i][$j]"
 
   def NumHeads(): Int = numHeads
 
