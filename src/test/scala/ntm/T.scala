@@ -1,5 +1,7 @@
 package ntm
 
+import org.scalatest.FunSuite
+
 class T() {
   var totCount: Int = 0
   var errCount: Int = 0
@@ -30,18 +32,19 @@ class T() {
   }
 }
 
-object T {
-  def main(args: Array[String]) {
-    val t = new T()
-    t.Logf("Addressing:")
+class NTMSuite extends FunSuite {
+  val t = new T()
+  test("Addressing") {
     addressing_test.TestCircuit(t)
-    t.Logf("CTRL_Logistic:")
+  }
+  test("CTRL_Logistic") {
     ctrl_test.TestLogisticModel(t)
-    t.Logf("CTRL_Multinomial:")
+  }
+  test("CTRL_Multinomial") {
     ctrl_test.TestMultinomialModel(t)
-    t.Logf("NTM:")
+  }
+  test("NTM") {
     ntm_test.TestRMSProp(t)
-    
     t.endT
   }
 }

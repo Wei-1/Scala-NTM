@@ -1,5 +1,7 @@
 # Scala Neural Turning Machine
 
+[![Build Status](https://travis-ci.org/Wei-1/Scala-NTM.svg?branch=master)](https://travis-ci.org/Wei-1/Scala-NTM)
+
 This is a hard coded Neural Turning Machine (NTM) ported from
 [fumin/ntm](https://github.com/fumin/ntm).
 
@@ -22,12 +24,12 @@ I will start adding test cases from the paper first.
 
 ## STATUS:
 
-Currently, one can only check the code with:
-
-```
-sbt run
-```
-
 Unit tests are successful,
 and had done a 1 to 1 value comparison with fumin's project.
 (tested with the same random seed)
+
+## USAGES:
+
+Run the unit tests: `sbt test`
+
+Build the Jar file: `sbt package`
