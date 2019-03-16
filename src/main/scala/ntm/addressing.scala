@@ -415,6 +415,7 @@ object writtenMemory {
   ): writtenMemory = {
     val n = mtm1.N
     val m = mtm1.TopVal.head.size
+    val numHeads = heads.size
     val mtn = m * n
     val wm = new writtenMemory(
       Ws = ws,
@@ -425,15 +426,16 @@ object writtenMemory {
       TopVal = Array.ofDim[Double](n, m),
       // TopGrad = new Array[Double](mtn),
       TopGrad = Array.ofDim[Double](n, m),
-      erase = Array.ofDim[Double](m, m),
-      add = Array.ofDim[Double](m, m),
+      erase = Array.ofDim[Double](numHeads, m),
+      add = Array.ofDim[Double](numHeads, m),
       erasures = Array.ofDim[Double](n, m)
     )
-    for(i <- 0 until m) {
+
+    for(i <- 0 until wm.Heads.size) {
       val erase = wm.erase(i)
       val add = wm.add(i)
       val head = wm.Heads(i)
-      for(j <- 0 until m) {
+      for(j <- 0 until numHeads) {
         erase(j) = Sigmoid(head.getEraseVal(j))
         add(j) = Sigmoid(head.getAddVal(j))
       }
@@ -441,7 +443,7 @@ object writtenMemory {
 
     for(i <- 0 until n; j <- 0 until m) wm.erasures(i)(j) = mtm1.TopVal(i)(j)
 
-    for(k <- 0 until m) {
+    for(k <- 0 until wm.Ws.size) {
       // val we = Array.fill[Double](mtn)(1.0)
       val we = Array.ofDim[Double](n, m)
       for(i <- 0 until n; j <- 0 until m) we(i)(j) = 1.0
