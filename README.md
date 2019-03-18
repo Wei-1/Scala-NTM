@@ -18,8 +18,8 @@ I will start adding test cases from the paper first.
 ## TESTS:
 
 - [x] Unit Tests
-- [ ] Copy Task
-- [ ] Repeat Copy
+- [x] Copy Task [main](src/main/scala/ntm/example/copytask.scala)[test](src/test/scala/ntm/example/copytask_test.scala)
+- [ ] Repeat Copy - WIP
 - [ ] nGram
 
 ## STATUS:

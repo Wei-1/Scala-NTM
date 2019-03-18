@@ -45,6 +45,9 @@ class NTMSuite extends FunSuite {
   }
   test("NTM") {
     ntm_test.TestRMSProp(t)
+  }
+  test("Example - CopyTask") {
+    ntm.example.copytask_test.TestRun(t)
     t.endT
   }
 }

@@ -1,4 +1,4 @@
-package ntm
+package ntm.example
 
 class Run(
   SeqLen: Int,
@@ -14,9 +14,8 @@ object copytask {
     val data = new Array[Array[Double]](size)
     for(i <- 0 until data.size) {
       data(i) = new Array[Double](vectorSize)
-      for(j <- 0 until vectorSize) {
+      for(j <- 0 until vectorSize)
         data(i)(j) = (Math.random * 2).toInt
-      }
     }
 
     val input = new Array[Array[Double]](size * 2 + 2)
@@ -25,9 +24,8 @@ object copytask {
       if(i == 0) {
         input(i)(vectorSize) = 1
       } else if(i <= size) {
-        for(j <- 0 until vectorSize) {
+        for(j <- 0 until vectorSize)
           input(i)(j) = data(i - 1)(j)
-        }
       } else if(i == size + 1) {
         input(i)(vectorSize + 1) = 1
       }
@@ -37,9 +35,8 @@ object copytask {
     for(i <- 0 until output.size) {
       output(i) = new Array[Double](vectorSize)
       if(i >= size + 2) {
-        for(j <- 0 until vectorSize) {
+        for(j <- 0 until vectorSize)
           output(i)(j) = data(i - (size + 2))(j)
-        }
       }
     }
 
@@ -55,13 +52,13 @@ object copytask {
     val m = 20
     val c = ntm.Controller.NewEmptyController(vectorSize + 2, vectorSize, h1Size, numHeads, n, m)
     val weights = c.WeightsValVec()
-    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size)
       weights(i)(j) = 1 * (Math.random - 0.5)
-    }
 
     var losses = Array[Double]()
 
     val rmsp = ntm.RMSProp.NewRMSProp(c)
+    println("Training -")
     println(s"numweights: ${c.WeightsValVec().size}")
     for(i <- 1 to 100000) {
       val (x, y) = GenSeq((Math.random * 20).toInt + 1, vectorSize)
@@ -74,28 +71,31 @@ object copytask {
         println(s"$i, bpc: $bpc, seq length: ${y.size}")
       }
     }
-    // val seqLens = Array(10, 20, 30, 50, 120)
-    // var runs = Array[Run]()
-    // for(seql <- seqLens) {
-    //   val (x, y) = GenSeq(seql, vectorSize)
-    //   val model = new ntm.LogisticModel(Y = y)
-    //   val machines = ntm.NTM.ForwardBackward(c, x, model)
-    //   val l = model.Loss(ntm.NTM.Predictions(machines))
-    //   val bps = l / (y.size * y.head.size)
-    //   println(s"sequence length: $seql, loss: $bps")
 
-    //   val r = new Run(
-    //     SeqLen = seql,
-    //     BitsPerSeq = bps,
-    //     X = x,
-    //     Y = y,
-    //     Predictions = ntm.NTM.Predictions(machines),
-    //     HeadWeights = ntm.NTM.HeadWeights(machines)
-    //   )
-    //   runs :+= r
-    //   //println(s"x: $x")
-    //   //println(s"y: $y")
-    //   //println(s"predictions: ${ntm.Sprint2(ntm.Predictions(machines))}")
-    // }
+    println("Predicting -")
+    val seqLens = Array(10, 20, 30, 50, 120)
+    var runs = Array[Run]()
+    for(seql <- seqLens) {
+      val (x, y) = GenSeq(seql, vectorSize)
+      val model = new ntm.LogisticModel(Y = y)
+      val machines = ntm.NTM.ForwardBackward(c, x, model)
+      val predicts = ntm.NTM.Predictions(machines)
+      val hWeights = ntm.NTM.HeadWeights(machines)
+      val l = model.Loss(predicts)
+      val bps = l / (y.size * y.head.size)
+      println(s"sequence length: $seql, loss: $bps")
+
+      val r = new Run(
+        SeqLen = seql,
+        BitsPerSeq = bps,
+        X = x,
+        Y = y,
+        Predictions = predicts,
+        HeadWeights = hWeights
+      )
+      runs :+= r
+      println(s"x: $x, y: $y")
+      println(s"predictions: ${ntm.math.Sprint2(ntm.NTM.Predictions(machines))}")
+    }
   }
 }
