@@ -45,11 +45,11 @@ object copytask {
 
 
   def main(args: Array[String]) {
-    val vectorSize = 8
-    val h1Size = 100
+    val vectorSize = 3 // down-scaling for faster predicting
+    val h1Size = 12 // down-scaling for faster predicting
     val numHeads = 1
-    val n = 128
-    val m = 20
+    val n = 20 // down-scaling for faster predicting
+    val m = 8 // down-scaling for faster predicting
     val c = ntm.Controller.NewEmptyController(vectorSize + 2, vectorSize, h1Size, numHeads, n, m)
     val weights = c.WeightsValVec()
     for(i <- 0 until weights.size; j <- 0 until weights(i).size)
@@ -60,12 +60,13 @@ object copytask {
     val rmsp = ntm.RMSProp.NewRMSProp(c)
     println("Training -")
     println(s"numweights: ${c.WeightsValVec().size}")
-    for(i <- 1 to 100000) {
-      val (x, y) = GenSeq((Math.random * 20).toInt + 1, vectorSize)
+    for(i <- 0 to 1000) {
+      val randLength = if(i % 100 == 0) 6 else ((Math.random * 6).toInt + 1)
+      val (x, y) = GenSeq(randLength, vectorSize)
       val model = new ntm.LogisticModel(Y = y)
       val machines = rmsp.Train(x, model, 0.95, 0.5, 1e-3, 1e-3)
       val l = model.Loss(ntm.NTM.Predictions(machines))
-      if(i % 1000 == 0) {
+      if(i % 100 == 0) {
         val bpc = l / (y.size * y.head.size)
         losses :+= bpc
         println(s"$i, bpc: $bpc, seq length: ${y.size}")
@@ -73,7 +74,7 @@ object copytask {
     }
 
     println("Predicting -")
-    val seqLens = Array(10, 20, 30, 50, 120)
+    val seqLens = Array(2, 4, 6, 10, 16)
     var runs = Array[Run]()
     for(seql <- seqLens) {
       val (x, y) = GenSeq(seql, vectorSize)
@@ -94,8 +95,12 @@ object copytask {
         HeadWeights = hWeights
       )
       runs :+= r
-      println(s"x: $x, y: $y")
+      println(s"x: ${ntm.math.Sprint2(x)}, y: ${ntm.math.Sprint2(y)}")
       println(s"predictions: ${ntm.math.Sprint2(ntm.NTM.Predictions(machines))}")
     }
+
+    println("Print Weights -")
+    val finalWeights = c.WeightsValVec()
+    finalWeights.foreach(arr => println(arr.mkString(",")))
   }
 }
