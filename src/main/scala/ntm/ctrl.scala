@@ -195,6 +195,17 @@ class Controller(
 
   def MemoryM(): Int = memoryM
 
+  def Save(file: String): Unit = {
+    val wStr = WeightsValVec.map(_.mkString(",")).mkString(";")
+    val writer = new java.io.FileWriter(file)
+    writer.write(wStr)
+    writer.close
+  }
+
+  def Load(file: String): Unit = {
+    val wStr = scala.io.Source.fromFile(file).getLines.mkString
+    weightsValVec = wStr.split(';').map(_.split(',').map(_.toDouble))
+  }
 }
 
 // NewEmptyController returns a new controller1 which is a single layer feedforward network.

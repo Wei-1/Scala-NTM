@@ -3,6 +3,32 @@ package ntm
 import math._
 
 object ctrl_test {
+  def TestSaveLoad(t: T) {
+    val times = 9
+    val inputSize = 10
+    val outputSize = 4
+    val n = 3
+    val m = 2
+    val h1Size = 3
+    val numHeads = 2
+    val c1 = Controller.NewEmptyController(inputSize, outputSize, h1Size, numHeads, n, m)
+    val weights = c1.WeightsValVec()
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size)
+      weights(i)(j) = 2 * Math.random
+    c1.Save("TestWeightFile")
+    val c2 = Controller.NewEmptyController(inputSize, outputSize, h1Size, numHeads, n, m)
+    c2.Load("TestWeightFile")
+    val testWeights = c2.WeightsValVec()
+    var check = true
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size) {
+      check &= weights(i)(j) == testWeights(i)(j)
+    }
+    if(check) {
+      t.Logf(s"[CTRL] OK save load weights")
+    } else {
+      t.Errorf(s"[CTRL] wrong save load weights")
+    }
+  }
   def TestLogisticModel(t: T) {
     val times = 9
     val x = makeTensor2(times, 4)

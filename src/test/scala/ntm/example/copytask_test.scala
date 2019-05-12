@@ -8,7 +8,7 @@ object copytask_test {
     val n = 20 // down-scaling for faster predicting
     val m = 8 // down-scaling for faster predicting
     val seqLens = Array(2, 4, 6, 10, 16)
-    var runs = Array[Run]()
+    var runCount = 0
   	try {
       val c = ntm.Controller.NewEmptyController(vectorSize + 2, vectorSize, h1Size, numHeads, n, m)
       val weights = c.WeightsValVec()
@@ -24,20 +24,11 @@ object copytask_test {
         val l = model.Loss(predicts)
         val bps = l / (y.size * y.head.size)
         t.Logf(s"[EXAMPLE - COPYTASK] sequence length: $seql, loss: $bps")
-
-        val r = new Run(
-          SeqLen = seql,
-          BitsPerSeq = bps,
-          X = x,
-          Y = y,
-          Predictions = predicts,
-          HeadWeights = hWeights
-        )
-        runs :+= r
+        runCount += 1
       }
     } catch { case e: Exception =>
-      if(runs.size < seqLens.size)
-        t.Fatalf(s"[EXAMPLE - COPYTASK] fatal error at run ${seqLens(runs.size)} with exception message: $e")
+      if(runCount < seqLens.size)
+        t.Fatalf(s"[EXAMPLE - COPYTASK] fatal error at run ${seqLens(runCount)} with exception message: $e")
       else
         t.Fatalf(s"[EXAMPLE - COPYTASK] fatal after run with exception message: $e")
     }

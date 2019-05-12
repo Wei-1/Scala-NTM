@@ -37,6 +37,9 @@ class NTMSuite extends FunSuite {
   test("Addressing") {
     addressing_test.TestCircuit(t)
   }
+  test("CTRL_SaveLoad") {
+    ctrl_test.TestSaveLoad(t)
+  }
   test("CTRL_Logistic") {
     ctrl_test.TestLogisticModel(t)
   }
@@ -48,6 +51,9 @@ class NTMSuite extends FunSuite {
   }
   test("Example - CopyTask") {
     ntm.example.copytask_test.TestRun(t)
+  }
+  test("Example - RepeatCopy") {
+    ntm.example.repeatcopy_test.TestRun(t)
     t.endT
   }
 }

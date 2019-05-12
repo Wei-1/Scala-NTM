@@ -1,14 +1,5 @@
 package ntm.example
 
-class Run(
-  SeqLen: Int,
-  BitsPerSeq: Double,
-  X: Array[Array[Double]],
-  Y: Array[Array[Double]],
-  Predictions: Array[Array[Double]],
-  HeadWeights: Array[Array[Array[Double]]]
-) {}
-
 object copytask {
   def GenSeq(size: Int, vectorSize: Int): (Array[Array[Double]], Array[Array[Double]]) = {
     val data = new Array[Array[Double]](size)
@@ -75,7 +66,6 @@ object copytask {
 
     println("Predicting -")
     val seqLens = Array(2, 4, 6, 10, 16)
-    var runs = Array[Run]()
     for(seql <- seqLens) {
       val (x, y) = GenSeq(seql, vectorSize)
       val model = new ntm.LogisticModel(Y = y)
@@ -85,18 +75,8 @@ object copytask {
       val l = model.Loss(predicts)
       val bps = l / (y.size * y.head.size)
       println(s"sequence length: $seql, loss: $bps")
-
-      val r = new Run(
-        SeqLen = seql,
-        BitsPerSeq = bps,
-        X = x,
-        Y = y,
-        Predictions = predicts,
-        HeadWeights = hWeights
-      )
-      runs :+= r
       println(s"x: ${ntm.math.Sprint2(x)}, y: ${ntm.math.Sprint2(y)}")
-      println(s"predictions: ${ntm.math.Sprint2(ntm.NTM.Predictions(machines))}")
+      println(s"predictions: ${ntm.math.Sprint2(predicts)}")
     }
 
     println("Print Weights -")

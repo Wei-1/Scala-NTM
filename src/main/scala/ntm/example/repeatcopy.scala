@@ -43,7 +43,10 @@ object repeatcopy {
     for(i <- 0 until repeat) {
       for(datum <- data) {
         input :+= new Array[Double](inputSize)
-        output :+= datum.take(outputSize)
+        var tmpOut = datum.take(outputSize)
+        if(outputSize > datum.size)
+          tmpOut ++= new Array[Double](outputSize - datum.size)
+        output :+= tmpOut
       }
     }
 
@@ -87,7 +90,10 @@ object repeatcopy {
     for(i <- 0 until repeat) {
       for(datum <- data) {
         input :+= new Array[Double](inputSize)
-        output :+= datum.take(outputSize)
+        var tmpOut = datum.take(outputSize)
+        if(outputSize > datum.size)
+          tmpOut ++= new Array[Double](outputSize - datum.size)
+        output :+= tmpOut
       }
     }
 
@@ -125,7 +131,10 @@ object repeatcopy {
     for(i <- 0 until repeat) {
       for(datum <- data) {
         input :+= new Array[Double](inputSize)
-        output :+= datum.take(outputSize)
+        var tmpOut = datum.take(outputSize)
+        if(outputSize > datum.size)
+          tmpOut ++= new Array[Double](outputSize - datum.size)
+        output :+= tmpOut
       }
     }
 
@@ -138,7 +147,7 @@ object repeatcopy {
   }
 
   def randData(size: Int): Array[Array[Double]] = {
-    val vectorSize = 6
+    val vectorSize = 3
     val data = new Array[Array[Double]](size)
     for(i <- 0 until data.size) {
       data(i) = new Array[Double](vectorSize)
@@ -150,5 +159,52 @@ object repeatcopy {
   }
 
   def main(args: Array[String]) {
+
+    val (ox, oy) = repeatcopy.GenSeqBT(1, 1)
+    val h1Size = 12
+    val numHeads = 2
+    val n = 20
+    val m = 8
+    val c = ntm.Controller.NewEmptyController(ox.head.size, oy.head.size, h1Size, numHeads, n, m)
+    val weights = c.WeightsValVec()
+    for(i <- 0 until weights.size; j <- 0 until weights(i).size)
+      weights(i)(j) = 1 * (Math.random - 0.5)
+
+    var losses = Array[Double]()
+
+    val rmsp = ntm.RMSProp.NewRMSProp(c)
+    println("Training -")
+    println(s"numweights: ${c.WeightsValVec().size}")
+    for(i <- 0 to 1000) {
+      val (x, y) = repeatcopy.GenSeqBT((Math.random * 5).toInt + 1, (Math.random * 5).toInt + 1)
+      val model = new ntm.LogisticModel(Y = y)
+      val machines = rmsp.Train(x, model, 0.95, 0.5, 1e-3, 1e-3)
+      val l = model.Loss(ntm.NTM.Predictions(machines))
+      if(i % 1000 == 0) {
+        val bpc = l / (y.size * y.head.size)
+        losses :+= bpc
+        println(s"$i, bpc: $bpc, seq length: ${y.size}")
+      }
+    }
+
+    println("Predicting -")
+
+    val confs = Array(1 -> 1, 2 -> 3, 3 -> 4, 7 -> 7)
+    for((repeat, len) <- confs) {
+      val (x, y) = repeatcopy.GenSeqBT(repeat, len)
+      val model = new ntm.LogisticModel(Y = y)
+      val machines = ntm.NTM.ForwardBackward(c, x, model)
+      val predicts = ntm.NTM.Predictions(machines)
+      val hWeights = ntm.NTM.HeadWeights(machines)
+      val l = model.Loss(predicts)
+      val bps = l / (y.size * y.head.size)
+      println(s"repeat: $repeat, length: $len, loss: $bps")
+      println(s"x: ${ntm.math.Sprint2(x)}, y: ${ntm.math.Sprint2(y)}")
+      println(s"predictions: ${ntm.math.Sprint2(predicts)}")
+    }
+
+    println("Print Weights -")
+    val finalWeights = c.WeightsValVec()
+    finalWeights.foreach(arr => println(arr.mkString(",")))
   }
 }
