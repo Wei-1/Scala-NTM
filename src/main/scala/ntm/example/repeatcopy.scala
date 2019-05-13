@@ -3,9 +3,9 @@ package ntm.example
 object repeatcopy {
 
   // binary on time
-  def GenSeqBT(repeat: Int, seqlen: Int): (Array[Array[Double]], Array[Array[Double]]) = {
-    val data = randData(seqlen)
-    val vectorSize = data.head.size
+  def GenSeqBT(repeat: Int, seqlen: Int, vectorSize: Int = 3):
+    (Array[Array[Double]], Array[Array[Double]]) = {
+    val data = randData(seqlen, vectorSize)
     val inputSize = vectorSize + 4
     val outputSize = vectorSize + 1
 
@@ -59,9 +59,9 @@ object repeatcopy {
   }
 
   // linear on time
-  def GenSeqLT(repeat: Int, seqlen: Int): (Array[Array[Double]], Array[Array[Double]]) = {
+  def GenSeqLT(repeat: Int, seqlen: Int, vectorSize: Int = 3):
+    (Array[Array[Double]], Array[Array[Double]]) = {
     val data = randData(seqlen)
-    val vectorSize = data.head.size
     val inputSize = vectorSize + 3
     val outputSize = vectorSize + 1
 
@@ -106,9 +106,9 @@ object repeatcopy {
   }
 
   // GenSeq generates a sequence with the number of repitions specified as a scaler.
-  def GenSeq(repeat: Int, seqlen: Int): (Array[Array[Double]], Array[Array[Double]]) = {
+  def GenSeq(repeat: Int, seqlen: Int, vectorSize: Int = 3):
+    (Array[Array[Double]], Array[Array[Double]]) = {
     val data = randData(seqlen)
-    val vectorSize = data.head.size
     val inputSize = vectorSize + 2
     val outputSize = vectorSize + 1
 
@@ -146,8 +146,7 @@ object repeatcopy {
     (input, output)
   }
 
-  def randData(size: Int): Array[Array[Double]] = {
-    val vectorSize = 3
+  def randData(size: Int, vectorSize: Int = 3): Array[Array[Double]] = {
     val data = new Array[Array[Double]](size)
     for(i <- 0 until data.size) {
       data(i) = new Array[Double](vectorSize)
@@ -159,12 +158,12 @@ object repeatcopy {
   }
 
   def main(args: Array[String]) {
-
-    val (ox, oy) = repeatcopy.GenSeqBT(1, 1)
+    val vectorSize = 3
     val h1Size = 12
     val numHeads = 2
     val n = 20
     val m = 8
+    val (ox, oy) = repeatcopy.GenSeqBT(1, 1, vectorSize)
     val c = ntm.Controller.NewEmptyController(ox.head.size, oy.head.size, h1Size, numHeads, n, m)
     val weights = c.WeightsValVec()
     for(i <- 0 until weights.size; j <- 0 until weights(i).size)
@@ -175,7 +174,7 @@ object repeatcopy {
     val rmsp = ntm.RMSProp.NewRMSProp(c)
     println("Training -")
     println(s"numweights: ${c.WeightsValVec().size}")
-    for(i <- 0 to 1000) {
+    for(i <- 0 to 5000) {
       val (x, y) = repeatcopy.GenSeqBT((Math.random * 5).toInt + 1, (Math.random * 5).toInt + 1)
       val model = new ntm.LogisticModel(Y = y)
       val machines = rmsp.Train(x, model, 0.95, 0.5, 1e-3, 1e-3)
@@ -183,7 +182,8 @@ object repeatcopy {
       if(i % 1000 == 0) {
         val bpc = l / (y.size * y.head.size)
         losses :+= bpc
-        println(s"$i, bpc: $bpc, seq length: ${y.size}")
+        val today = java.util.Calendar.getInstance().getTime()
+        println(s"$today | i:$i, bpc:$bpc, seq_length:${y.size}")
       }
     }
 

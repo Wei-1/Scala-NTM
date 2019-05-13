@@ -51,7 +51,7 @@ object copytask {
     val rmsp = ntm.RMSProp.NewRMSProp(c)
     println("Training -")
     println(s"numweights: ${c.WeightsValVec().size}")
-    for(i <- 0 to 1000) {
+    for(i <- 0 to 5000) {
       val randLength = if(i % 100 == 0) 6 else ((Math.random * 6).toInt + 1)
       val (x, y) = GenSeq(randLength, vectorSize)
       val model = new ntm.LogisticModel(Y = y)
@@ -60,7 +60,8 @@ object copytask {
       if(i % 100 == 0) {
         val bpc = l / (y.size * y.head.size)
         losses :+= bpc
-        println(s"$i, bpc: $bpc, seq length: ${y.size}")
+        val today = java.util.Calendar.getInstance().getTime()
+        println(s"$today | i:$i, bpc:$bpc, seq_length:${y.size}")
       }
     }
 
