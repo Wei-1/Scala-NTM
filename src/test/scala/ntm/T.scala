@@ -54,6 +54,9 @@ class NTMSuite extends FunSuite {
   }
   test("Example - RepeatCopy") {
     ntm.example.repeatcopy_test.TestRun(t)
+  }
+  test("Example - NGram") {
+    ntm.example.ngram_test.TestRun(t)
     t.endT
   }
 }

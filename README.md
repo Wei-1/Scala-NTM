@@ -20,7 +20,7 @@ I will start adding test cases from the paper first.
 - [x] Unit Tests
 - [x] Copy Task
 - [x] Repeat Copy
-- [ ] nGram - WIP
+- [x] nGram
 
 ## STATUS:
 

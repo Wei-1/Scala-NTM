@@ -174,12 +174,13 @@ object repeatcopy {
     val rmsp = ntm.RMSProp.NewRMSProp(c)
     println("Training -")
     println(s"numweights: ${c.WeightsValVec().size}")
+    var model: ntm.LogisticModel = null
     for(i <- 0 to 5000) {
       val (x, y) = repeatcopy.GenSeqBT((Math.random * 5).toInt + 1, (Math.random * 5).toInt + 1)
-      val model = new ntm.LogisticModel(Y = y)
+      model = new ntm.LogisticModel(Y = y)
       val machines = rmsp.Train(x, model, 0.95, 0.5, 1e-3, 1e-3)
-      val l = model.Loss(ntm.NTM.Predictions(machines))
       if(i % 1000 == 0) {
+        val l = model.Loss(ntm.NTM.Predictions(machines))
         val bpc = l / (y.size * y.head.size)
         losses :+= bpc
         val today = java.util.Calendar.getInstance().getTime()
@@ -188,7 +189,6 @@ object repeatcopy {
     }
 
     println("Predicting -")
-
     val confs = Array(1 -> 1, 2 -> 3, 3 -> 4, 7 -> 7)
     for((repeat, len) <- confs) {
       val (x, y) = repeatcopy.GenSeqBT(repeat, len)

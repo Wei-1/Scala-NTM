@@ -56,8 +56,8 @@ object copytask {
       val (x, y) = GenSeq(randLength, vectorSize)
       val model = new ntm.LogisticModel(Y = y)
       val machines = rmsp.Train(x, model, 0.95, 0.5, 1e-3, 1e-3)
-      val l = model.Loss(ntm.NTM.Predictions(machines))
       if(i % 100 == 0) {
+        val l = model.Loss(ntm.NTM.Predictions(machines))
         val bpc = l / (y.size * y.head.size)
         losses :+= bpc
         val today = java.util.Calendar.getInstance().getTime()
