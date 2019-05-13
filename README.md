@@ -11,10 +11,6 @@ so the array objects can replace the pointers in Go.
 Since this is ported from Go,
 a lot of implementations are still far from optimal in Scala. [(Notes)](#notes)
 
-However, instead of focusing on adapting the Scala style.
-
-I will start adding test cases from the paper first.
-
 ## TESTS:
 
 - [x] Unit Tests
@@ -27,6 +23,11 @@ I will start adding test cases from the paper first.
 Unit tests are successful,
 and had done a 1 to 1 value comparison with fumin's project.
 (tested with the same random seed)
+
+Examples are tested.
+We are able to train and improve the predict rate with the down-scaled examples.
+
+Getting serious computation performance issues.
 
 ## USAGES:
 
@@ -41,15 +42,18 @@ Run examples: `sbt run`
 Currently, the computation performance is 1000 times worse than the [Go version](https://github.com/fumin/ntm).
 
 The comparison is based on the CopyTask example and RepeatCopy example computation time on my laptop.
-
-Therefore, all examples are down scaled for reasonable testing time.
+Therefore, all examples are down-scaled for reasonable testing time.
 
 Please don't hesitate to contribute if you find any computation bottleneck.
 
 Possible Bottleneck Improvements:
 
-1. Replace those for loops with while loops
+1. Replace those `for loops` with `while loops`
 
-2. Replace Array with IndexSeq or other collection classes
+2. Replace `Array` with other collection classes
 
-3. Use NDArray with [MxNet](https://github.com/apache/incubator-mxnet) to improve tensor computations. Since this repo is for no dependency, might create another repo.
+3. Remove object creations in loops
+
+4. Just `.par` the problem
+
+5. Use `NDArray` with [MxNet](https://github.com/apache/incubator-mxnet) to improve tensor computations. Since this repo is for no dependency, might create another repo.
