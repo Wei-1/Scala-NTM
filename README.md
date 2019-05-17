@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Wei-1/Scala-NTM.svg?branch=master)](https://travis-ci.org/Wei-1/Scala-NTM)
 
-This is a hard coded Neural Turning Machine (NTM) ported from
+This is a hard coded [Neural Turning Machine (NTM)](https://arxiv.org/pdf/1410.5401.pdf) ported from
 [fumin/ntm](https://github.com/fumin/ntm).
 
 We use 2D instead of 1D Array for value and gradient memory
