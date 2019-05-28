@@ -1,4 +1,4 @@
-name := "scala-ntm"
+name := "scalaml-ntm"
 
 version := "0.1"
 

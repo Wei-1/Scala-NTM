@@ -1,4 +1,5 @@
-package ntm.example
+package com.scalaml.ntm.example
+import com.scalaml.ntm
 
 object ngram {
   // GenProb generates a probability lookup table for a n-gram model.

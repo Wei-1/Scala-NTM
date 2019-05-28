@@ -1,4 +1,5 @@
-package ntm.example
+package com.scalaml.ntm.example
+import com.scalaml.ntm
 
 object repeatcopy {
 

@@ -1,4 +1,5 @@
-package ntm.example
+package com.scalaml.ntm.example
+import com.scalaml.ntm
 
 object copytask {
   def GenSeq(size: Int, vectorSize: Int): (Array[Array[Double]], Array[Array[Double]]) = {

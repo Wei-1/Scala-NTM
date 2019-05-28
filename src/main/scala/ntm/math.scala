@@ -1,4 +1,4 @@
-package ntm
+package com.scalaml.ntm
 
 object math {
   val machineEpsilon = 2.2e-16

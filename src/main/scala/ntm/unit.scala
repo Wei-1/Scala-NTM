@@ -1,4 +1,4 @@
-package ntm
+package com.scalaml.ntm
 
 // An unit is a node in a neural network, containing fields that are essential to
 // efficiently compute gradients in the backward pass of a stochastic gradient

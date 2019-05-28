@@ -8,7 +8,7 @@ For each of these tasks, the successfully trained models are saved under the fil
 "seedA_B", where A is the number indicating the seed provided to rand.Seed in the
 training process, and B is the iteration number in which the trained weights converged.
 */
-package ntm
+package com.scalaml.ntm
 
 import math._
 // A Head is a read write head on a memory bank.

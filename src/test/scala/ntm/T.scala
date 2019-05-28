@@ -1,5 +1,5 @@
-package ntm
-
+package com.scalaml.ntm
+import com.scalaml.ntm
 import org.scalatest.FunSuite
 
 class T() {

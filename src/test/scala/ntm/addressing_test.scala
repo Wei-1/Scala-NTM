@@ -1,4 +1,4 @@
-package ntm
+package com.scalaml.ntm
 
 import math._
 
