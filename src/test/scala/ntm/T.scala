@@ -34,6 +34,9 @@ class T() {
 
 class NTMSuite extends FunSuite {
   val t = new T()
+  test("Math") {
+    math_test.TestMath(t)
+  }
   test("Addressing") {
     addressing_test.TestCircuit(t)
   }
