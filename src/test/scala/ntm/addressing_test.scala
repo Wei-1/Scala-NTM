@@ -339,7 +339,7 @@ object addressing_test {
     }
     new refocus(
       TopVal = w,
-      TopGrad = new Array[Double](n),
+      TopGrad = new Array[Double](n)
     )
   }
 

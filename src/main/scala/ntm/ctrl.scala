@@ -86,7 +86,7 @@ class Controller(
       memoryN = memoryN,
       xSize = xSize,
       h1Size = h1Size,
-      ySize = ySize,
+      ySize = ySize
     )
 
     val ud = new Array[Double](c.wh1Cols())
