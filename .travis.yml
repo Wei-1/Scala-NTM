@@ -1,6 +1,9 @@
-# language: scala
-# jdk: openjdk8
-# scala:
-#   - 2.12.6
+language: scala
+jdk: openjdk8
+scala:
+  - 2.12.6
 
-# script: sbt test
+os:
+  - osx
+
+script: sbt test
