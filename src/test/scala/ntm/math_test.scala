@@ -33,13 +33,13 @@ object math_test {
     var y = Array[Double]()
     y = Array(7.0, 8.0)
     Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y)
-    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 6.1425)
-    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 12.395)
+    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 8.85)
+    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 19.9)
 
     y = Array(7.0, 8.0)
     Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y)
-    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 9.1425)
-    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 12.27)
+    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 11.85)
+    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 17.4)
 
     var a = Array[Array[Double]]()
     a = Array(Array(1, 2), Array(3, 4))

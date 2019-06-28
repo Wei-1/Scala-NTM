@@ -37,8 +37,10 @@ object math {
     // y = alpha * A * x + beta * y; if t == blas.NoTrans
     val n = x.size
     val m = y.size
+    val z = y.map(_ * beta)
     for(i <- 0 until n; j <- 0 until m)
-      y(j) = alpha * (if(trans) M2(i)(j) else M2(j)(i)) * x(i) + beta * y(j)
+      z(j) += alpha * (if(trans) M2(i)(j) else M2(j)(i)) * x(i)
+    for(i <- 0 until m) y(i) = z(i)
   }
 
   def Ger(alpha: Double, x: Array[Double], y: Array[Double], A: Array[Array[Double]]): Unit = {
