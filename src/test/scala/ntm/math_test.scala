@@ -2,7 +2,7 @@ package com.scalaml.ntm
 
 import org.apache.mxnet._
 
-import com.scalaml.ntm.mxnet_math._
+import com.scalaml.ntm.MxNetMath._
 
 object math_test {
   def TestMath(t: T): Unit = try {
@@ -32,21 +32,22 @@ object math_test {
     checkEqual("makeTensor2(2, 3).size", makeTensor2(2, 3).shape(0) - 2)
     checkEqual("makeTensor2(2, 3).head.size", makeTensor2(2, 3).shape(1) - 3)
 
-    var y = Array[Float]()
-    y = Gemv(false, 0.5f, NDArray.array(Array(1, 2, 3, 4), Shape(2, 2)), NDArray.array(Array(5, 6), Shape(2, 1)), 0.05f, NDArray.array(Array(7, 8), Shape(2, 1))).toArray
-    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 8.85)
-    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 19.9)
+    var y = NDArray.array(Array(7, 8), Shape(2, 1))
+    Gemv(false, 0.5f, NDArray.array(Array(1, 2, 3, 4), Shape(2, 2)), NDArray.array(Array(5, 6), Shape(2, 1)), 0.05f, y)
+    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y.toArray(0) - 8.85)
+    checkEqual("Gemv(false, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y.toArray(1) - 19.9)
 
-    y = Gemv(true, 0.5f, NDArray.array(Array(1, 2, 3, 4), Shape(2, 2)), NDArray.array(Array(5, 6), Shape(2, 1)), 0.05f, NDArray.array(Array(7, 8), Shape(2, 1))).toArray
-    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y(0) - 11.85)
-    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y(1) - 17.4)
+    y = NDArray.array(Array(7, 8), Shape(2, 1))
+    Gemv(true, 0.5f, NDArray.array(Array(1, 2, 3, 4), Shape(2, 2)), NDArray.array(Array(5, 6), Shape(2, 1)), 0.05f, y)
+    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(0)", y.toArray(0) - 11.85)
+    checkEqual("Gemv(true, 0.5, Array(Array(1, 2), Array(3, 4)), Array(5, 6), 0.05, y) y(1)", y.toArray(1) - 17.4)
 
-    y = Ger(0.5f, NDArray.array(Array(5, 6), Shape(2, 1)), NDArray.array(Array(7, 8), Shape(2, 1)),
-      NDArray.array(Array(1, 2, 3, 4), Shape(2, 2))).toArray
-    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(0)(0)", y(0) - 18.5)
-    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(0)(1)", y(1) - 22.0)
-    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(1)(0)", y(2) - 24.0)
-    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(1)(1)", y(3) - 28.0)
+    y = NDArray.array(Array(1, 2, 3, 4), Shape(2, 2))
+    Ger(0.5f, NDArray.array(Array(5, 6), Shape(2, 1)), NDArray.array(Array(7, 8), Shape(2, 1)), y)
+    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(0)(0)", y.toArray(0) - 18.5)
+    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(0)(1)", y.toArray(1) - 22.0)
+    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(1)(0)", y.toArray(2) - 24.0)
+    checkEqual("Ger(0.5, Array(5, 6), Array(7, 8), a) a(1)(1)", y.toArray(3) - 28.0)
   } catch { case e: Exception =>
     t.Errorf(s"[MATH] wrong math Exception: $e")
   }

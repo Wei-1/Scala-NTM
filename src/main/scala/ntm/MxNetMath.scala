@@ -2,7 +2,7 @@ package com.scalaml.ntm
 
 import org.apache.mxnet._
 
-object mxnet_math {
+object MxNetMath {
   val machineEpsilon: Double = 2.2e-16
   val machineEpsilonSqrt: Double = 1e-8 // Math.sqrt(machineEpsilon)
 
@@ -27,14 +27,14 @@ object mxnet_math {
   // Gemv(t Trans, alpha f64, A General, x Vec, beta f64, y Vec)
   // y = alpha * A * x + beta * y; if t == blas.NoTrans
   def Gemv(trans: Boolean, alpha: Float, M2: NDArray,
-    x: NDArray, beta: Float, y: NDArray): NDArray = {
+    x: NDArray, beta: Float, y: NDArray): Unit = {
     // y = alpha * A * x + beta * y; if t == blas.NoTrans
-    if(trans) NDArray.dot(NDArray.transpose(M2), x) * alpha + y * beta
-    else NDArray.dot(M2, x) * alpha + y * beta
+    y *= beta
+    y += NDArray.dot( { if(trans) NDArray.transpose(M2) else M2 } , x) * alpha
   }
 
-  def Ger(alpha: Float, x: NDArray, y: NDArray, A: NDArray): NDArray = {
+  def Ger(alpha: Float, x: NDArray, y: NDArray, A: NDArray): Unit = {
     // A += alpha * x * y^T
-    A + NDArray.dot(x, NDArray.transpose(y)) * alpha
+    A += NDArray.dot(x, NDArray.transpose(y)) * alpha
   }
 }
